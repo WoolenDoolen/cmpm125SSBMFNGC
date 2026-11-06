@@ -1,10 +1,49 @@
-node_modules/
-dist/
-.vite/
-*.local
-*.log
+# Unity generated data
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uild/
+/[Bb]uilds/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE and generated project files
+/.vs/
+/.vscode/
+/.idea/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.csproj.meta
+*.sln.meta
+*.slnx.meta
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Unity diagnostics and exported builds
+sysinfo.txt
+*.stackdump
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build.properties
+
+# Local OS files
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
+Desktop.ini
 
