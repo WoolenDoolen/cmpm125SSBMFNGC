@@ -1,56 +1,50 @@
 # Between a Rock and a Hard Place
 
-A new Unity game project. Game design and gameplay have not been implemented yet.
+Early Unity starting layout for the team pitch. The current scene tests the basic interaction: aim a turret, shoot the mountain for ore, try a damage upgrade, then shoot across the field when the mountain clears.
 
-## Editor version
+## Open it
 
-Use **Unity 6.6, 6000.6.8f1** (revision `237b6593792b`), the latest production release verified on November 5, 2026. The exact version is tracked in `ProjectSettings/ProjectVersion.txt`.
+Use **Unity 6000.6.3f1** with **Universal Render Pipeline (URP) 17.6.0**. Open `Assets/_Project/Scenes/Main.unity`, press Play, and click the Game view. The ground, two tank blocks, barrels, and mountain are saved in the scene and can be moved in the editor.
 
-- [Release notes and downloads](https://unity.com/releases/editor/whats-new/6000.6.8f1)
-- [Install this version with Unity Hub](unityhub://6000.6.8f1/237b6593792b)
-
-## Open the project
-
-1. Install Unity Hub and the editor version above. Add build support for your target platform when needed.
-2. Clone this repository.
-3. In Unity Hub, choose **Projects > Add > Add project from disk** and select the repository root, which contains `Assets`, `Packages`, and `ProjectSettings`.
-4. Open `Assets/_Project/Scenes/Main.unity` and enter Play mode. It contains only the default camera and directional light; there is no gameplay yet.
-
-The starter uses Unity's built-in render pipeline. No game framework, third-party assets, or rendering packages have been added.
-
-## WSL workflow
-
-Use WSL for Git and shell commands; run the Windows Unity Editor against the same checkout:
-
-```bash
-git clone https://github.com/WoolenDoolen/cmpm125SSBMFNGC.git
-cd cmpm125SSBMFNGC
-./scripts/open-unity.sh
-```
-
-The launcher reads the pinned editor version and looks in the standard Unity Hub install directories. For a custom installation, set `UNITY_EDITOR_PATH` to the executable's WSL or Linux path. Arguments after the script are forwarded to Unity.
-
-For example, run an import check without opening an editor window:
-
-```bash
-mkdir -p Logs
-./scripts/open-unity.sh -batchmode -nographics -quit -logFile -
-```
-
-## Project layout
-
-| Path | Purpose |
+| Control | Action |
 | --- | --- |
-| `Assets/_Project/Scenes` | Game scenes; `Main` is enabled in the build scene list. |
-| `Assets/_Project/Scripts` | Future gameplay code. |
-| `Assets/_Project/Art` | Future art assets. |
-| `Assets/_Project/Audio` | Future music and sound effects. |
-| `Assets/_Project/Materials` | Future materials. |
-| `Assets/_Project/Prefabs` | Future reusable game objects. |
-| `Assets/_Project/Settings` | Future game configuration assets. |
-| `Packages` | Unity package manifest and dependency lockfile. |
-| `ProjectSettings` | Shared editor, player, and build settings. |
+| Up / Down | Change barrel angle |
+| Left / Right | Change shot power |
+| Space | Fire and pass the turn after impact |
+| U | Spend 20 ore on one test damage upgrade |
+| R | Reload the scene |
 
-Commit assets with their `.meta` files to preserve references. Text serialization and visible metadata are enabled. Generated caches, local editor settings, IDE files, logs, and build outputs are ignored by Git.
+Blue and Red share the keyboard and alternate turns. The small default Unity GUI is a temporary readout for testing.
 
-The previous Phaser/Vite application and its GitHub Pages workflow have been removed. Earlier work remains available in Git history.
+The team's original terrain layout from commit `334e992` is preserved in `Assets/_Project/Scenes/TeamLayout.unity`, with its hills, mountain, ground, and colliders. Its sprite materials use URP. `Main.unity` is the playable mechanics test scene.
+
+## What currently works
+
+- Aiming and gravity-driven projectiles with collision detection.
+- Turn switching after a hit or miss.
+- Mountain hits give the firing side 20 ore. Four hits empty the test mountain.
+- One upgrade per side changes direct-hit damage from 20 to 30.
+- The empty mountain slides right and its collider switches off.
+- After it clears, direct hits reduce the other tank's health.
+
+The mountain movement is a placeholder for the pitched walking sequence. Combat currently tests health subtraction; there is no match-end flow. Army units, shields, weapon selection, terrain changes, art, animation, sound, menus, and game balancing still need work.
+
+## Video highlights (about 1-2 minutes)
+
+1. Show `Main` in Unity's Scene view. Point out the two faction placeholders, central resource mountain, and flat collision ground.
+2. Enter Play. Change the angle with Up/Down and power with Left/Right, then fire with Space. Point out the curved projectile motion and turn change.
+3. Hit the mountain and show the ore count increasing. The starting **40 degrees / 14 power** works from either side. Press U on a later turn once that side has 20 ore, and show damage changing from 20 to 30.
+4. After four mountain hits, show the temporary slide-out and explain that this tests the transition into open combat.
+5. Set about **40 degrees / 14.5 power**, fire across the field, and show the opponent's health dropping. Close by describing the next work: mountain walking animation, army units/equipment, and the rest of the combat loop.
+
+Describe this as a working first pass at the pitch's core mechanics. You do not need to play a finished match or show a victory screen.
+
+## Backup and local build
+
+The previous complete prototype is preserved beside this repository in `complete prototype backup`, including its Unity source and Windows build. The active repository contains the smaller starting-layout version.
+
+Use **Prototype > Build Windows Prototype** to rebuild `Builds/Windows/BetweenARock.exe`. The optional development-build argument `-prototypeSmokeTest` runs a short check of the current mechanics. Build outputs and local checks are ignored by Git.
+
+## AI assistance
+
+OpenAI Codex assisted with implementing this prototype, its documentation, and local checks. The game concept and pitch came from the team.
