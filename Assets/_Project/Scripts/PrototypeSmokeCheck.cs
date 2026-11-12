@@ -60,6 +60,15 @@ namespace RockAndHardPlace
             Require(UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset,
                 "The starting layout must use URP");
             Require(game != null && game.tanks.Length == 2 && game.mountain != null, "Scene references");
+            for (int i = 0; i < 2; i++)
+            {
+                var hill = GameObject.Find(i == 0 ? "LeftHill" : "RightHill");
+                Require(hill != null && hill.GetComponent<PolygonCollider2D>() != null,
+                    "The playable scene must retain both team hill colliders");
+                Require(Mathf.Abs(game.tanks[i].transform.position.x - hill.transform.position.x) < 0.01f &&
+                    Mathf.Abs(game.tanks[i].transform.position.y - hill.GetComponent<Collider2D>().bounds.max.y) < 0.01f,
+                    "Each turret must stand on its hilltop");
+            }
             Require(!game.BuyUpgrade(), "Cannot buy with no ore");
             float wait = Time.time + 0.5f;
             while (Time.time < wait) yield return null;
@@ -71,7 +80,7 @@ namespace RockAndHardPlace
             Require(game.Fire() && !game.Fire(), "Single active shell");
             while (game.shotActive) yield return null;
             Require(game.currentPlayer == 1 && game.mountainOre == 80, "A miss passes the turn without ore");
-            game.tanks[0].SetAim(40, 14);
+            game.tanks[0].SetAim(40, 8);
 
             for (int i = 0; i < 4; i++)
             {
@@ -90,7 +99,7 @@ namespace RockAndHardPlace
             Require(game.phase == PrototypePhase.Combat && !game.mountain.gameObject.activeSelf,
                 "Empty mountain clears the field");
             Require(!game.mountain.GetComponent<Collider2D>().enabled, "Mountain collider switches off");
-            game.tanks[game.currentPlayer].SetAim(40, 14.5f);
+            game.tanks[game.currentPlayer].SetAim(40, 10.3f);
             var shooter = game.tanks[game.currentPlayer];
             var target = game.tanks[1 - game.currentPlayer];
             Require(game.Fire(), "Combat shot");

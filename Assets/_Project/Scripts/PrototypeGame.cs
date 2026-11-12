@@ -19,7 +19,7 @@ namespace RockAndHardPlace
         private void Start()
         {
             Physics2D.gravity = new Vector2(0, -9.81f);
-            foreach (var tank in tanks) tank.SetAim(40, 14);
+            foreach (var tank in tanks) tank.SetAim(40, 8);
         }
 
         private void Update()

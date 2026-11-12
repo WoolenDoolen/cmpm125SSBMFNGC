@@ -29,7 +29,7 @@ public static class PrototypeBuild
         Debug.Log("PROTOTYPE BUILD PASSED");
     }
 
-    // Used once to save the editable starting layout. Normal builds keep scene edits.
+    // Reuse the team's terrain when creating the playable test layout.
     public static void CreateLayoutAndBuild()
     {
         CreateLayout();
@@ -38,32 +38,26 @@ public static class PrototypeBuild
 
     private static void CreateLayout()
     {
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        var cameraObject = new GameObject("Main Camera");
-        cameraObject.tag = "MainCamera";
-        var camera = cameraObject.AddComponent<Camera>();
-        cameraObject.AddComponent<AudioListener>();
-        camera.orthographic = true;
-        camera.orthographicSize = 10.5f;
-        camera.transform.position = new Vector3(0, 5.5f, -10);
-        camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color(0.18f, 0.2f, 0.22f);
+        var scene = EditorSceneManager.OpenScene("Assets/_Project/Scenes/TeamLayout.unity", OpenSceneMode.Single);
+        if (Camera.main == null) throw new Exception("Team layout is missing its camera.");
+        Camera.main.orthographicSize = 5.8f;
+        Camera.main.transform.position = new Vector3(0, 0.8f, -10);
 
         var blue = MaterialAsset("BlockoutBlue", new Color(0.2f, 0.4f, 0.8f));
         var red = MaterialAsset("BlockoutRed", new Color(0.8f, 0.25f, 0.2f));
-        var gray = MaterialAsset("BlockoutGray", new Color(0.45f, 0.45f, 0.45f));
-        var dark = MaterialAsset("BlockoutDark", new Color(0.3f, 0.3f, 0.3f));
         var yellow = MaterialAsset("BlockoutShell", Color.yellow);
-        var ground = Block("Ground", null, new Vector3(0, -0.5f, 0), new Vector3(40, 1, 1), dark);
-        ground.AddComponent<BoxCollider2D>();
 
         var game = new GameObject("Prototype Controller").AddComponent<PrototypeGame>();
         game.shellMaterial = yellow;
         game.tanks = new ArtilleryTank[2];
+        Physics2D.SyncTransforms();
         for (int i = 0; i < 2; i++)
         {
+            var hill = GameObject.Find(i == 0 ? "LeftHill" : "RightHill");
+            if (hill == null || hill.GetComponent<Collider2D>() == null)
+                throw new Exception("Team layout is missing a hill collider.");
             var root = new GameObject(i == 0 ? "Blue placeholder" : "Red placeholder");
-            root.transform.position = new Vector3(i == 0 ? -12 : 12, 0, 0);
+            root.transform.position = new Vector3(hill.transform.position.x, hill.GetComponent<Collider2D>().bounds.max.y, 0);
             var tank = root.AddComponent<ArtilleryTank>();
             game.tanks[i] = tank;
             tank.playerIndex = i;
@@ -75,28 +69,10 @@ public static class PrototypeBuild
             tank.barrelPivot.SetParent(root.transform, false);
             tank.barrelPivot.localPosition = new Vector3(0, 1.25f, -0.5f);
             Block("Barrel", tank.barrelPivot, new Vector3(0.6f, 0, 0), new Vector3(1.3f, 0.22f, 0.2f), i == 0 ? blue : red);
-            tank.SetAim(40, 14);
+            tank.SetAim(40, 8);
         }
 
-        var mountain = new GameObject("Mountain placeholder");
-        var points = new[] { new Vector2(-4.5f, 0), new Vector2(0, 7), new Vector2(4.5f, 0) };
-        var mesh = new Mesh { name = "Mountain triangle" };
-        mesh.vertices = new[] { (Vector3)points[0], (Vector3)points[1], (Vector3)points[2] };
-        mesh.triangles = new[] { 0, 1, 2, 2, 1, 0 };
-        mesh.RecalculateBounds();
-        const string meshPath = "Assets/_Project/Art/BlockoutMountain.asset";
-        var savedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
-        if (savedMesh == null) AssetDatabase.CreateAsset(mesh, meshPath);
-        else
-        {
-            EditorUtility.CopySerialized(mesh, savedMesh);
-            UnityEngine.Object.DestroyImmediate(mesh);
-            mesh = savedMesh;
-        }
-        mountain.AddComponent<MeshFilter>().sharedMesh = mesh;
-        mountain.AddComponent<MeshRenderer>().sharedMaterial = gray;
-        mountain.AddComponent<PolygonCollider2D>().points = points;
-        game.mountain = mountain.transform;
+        game.mountain = GameObject.Find("Mountain").transform;
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
     }

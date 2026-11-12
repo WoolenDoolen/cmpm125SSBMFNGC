@@ -10,7 +10,7 @@ namespace RockAndHardPlace
         public int ore;
         public bool upgraded;
         public float angle = 40;
-        public float power = 14;
+        public float power = 8;
         public int Damage => upgraded ? 30 : 20;
 
         public Vector2 Direction => new Vector2(

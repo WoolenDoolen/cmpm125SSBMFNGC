@@ -4,7 +4,7 @@ Early Unity starting layout for the team pitch. The current scene tests the basi
 
 ## Open it
 
-Use **Unity 6000.6.3f1** with **Universal Render Pipeline (URP) 17.6.0**. Open `Assets/_Project/Scenes/Main.unity`, press Play, and click the Game view. The ground, two tank blocks, barrels, and mountain are saved in the scene and can be moved in the editor.
+Use **Unity 6000.6.3f1** with **Universal Render Pipeline (URP) 17.6.0**. Open `Assets/_Project/Scenes/Main.unity`, press Play, and click the Game view. The team's rolling hills, ground, mountain, and colliders are in the playable scene, with one test turret on each hilltop. Everything is saved in the scene and can be moved in the editor.
 
 | Control | Action |
 | --- | --- |
@@ -16,7 +16,7 @@ Use **Unity 6000.6.3f1** with **Universal Render Pipeline (URP) 17.6.0**. Open `
 
 Blue and Red share the keyboard and alternate turns. The small default Unity GUI is a temporary readout for testing.
 
-The team's original terrain layout from commit `334e992` is preserved in `Assets/_Project/Scenes/TeamLayout.unity`, with its hills, mountain, ground, and colliders. Its sprite materials use URP. `Main.unity` is the playable mechanics test scene.
+The team's original terrain layout from commit `334e992` is preserved in `Assets/_Project/Scenes/TeamLayout.unity`, with its hills, mountain, ground, and colliders. `Main.unity` uses that same terrain with the playable mechanics added. Its sprite materials use URP.
 
 ## What currently works
 
@@ -31,11 +31,11 @@ The mountain movement is a placeholder for the pitched walking sequence. Combat 
 
 ## Video highlights (about 1-2 minutes)
 
-1. Show `Main` in Unity's Scene view. Point out the two faction placeholders, central resource mountain, and flat collision ground.
+1. Show `Main` in Unity's Scene view. Point out the team's rolling hills, the turret on each hilltop, and the central resource mountain.
 2. Enter Play. Change the angle with Up/Down and power with Left/Right, then fire with Space. Point out the curved projectile motion and turn change.
-3. Hit the mountain and show the ore count increasing. The starting **40 degrees / 14 power** works from either side. Press U on a later turn once that side has 20 ore, and show damage changing from 20 to 30.
+3. Hit the mountain and show the ore count increasing. The starting **40 degrees / 8 power** works from either side. Press U on a later turn once that side has 20 ore, and show damage changing from 20 to 30.
 4. After four mountain hits, show the temporary slide-out and explain that this tests the transition into open combat.
-5. Set about **40 degrees / 14.5 power**, fire across the field, and show the opponent's health dropping. Close by describing the next work: mountain walking animation, army units/equipment, and the rest of the combat loop.
+5. Set about **40 degrees / 10.3 power**, fire across the field, and show the opponent's health dropping. Close by describing the next work: mountain walking animation, army units/equipment, and the rest of the combat loop.
 
 Describe this as a working first pass at the pitch's core mechanics. You do not need to play a finished match or show a victory screen.
 
