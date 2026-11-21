@@ -1233,6 +1233,8 @@ GameObject:
   - component: {fileID: 1773718899}
   - component: {fileID: 1773718898}
   - component: {fileID: 1773718897}
+  - component: {fileID: 1773718901}
+  - component: {fileID: 1773718900}
   m_Layer: 0
   m_Name: Mountain
   m_TagString: Untagged
@@ -1365,6 +1367,53 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1773718900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773718896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d81f9126f3b780e4cb47ff5b49ade6bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RockAndHardPlace.Mountain
+  startingOre: 80
+  orePerHit: 20
+  animator: {fileID: 0}
+  leaveTrigger: Leave
+  onMined:
+    m_PersistentCalls:
+      m_Calls: []
+  onDepleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onLeft:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!95 &1773718901
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773718896}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 19e9e4f5b6a8a964f9fb619ae1411e33, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &7434290438758294924
 PrefabInstance:
   m_ObjectHideFlags: 0
