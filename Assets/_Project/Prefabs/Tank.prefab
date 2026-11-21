@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8308771020550688216}
-  - component: {fileID: 1038330902582225245}
   - component: {fileID: 6451471325187582233}
   - component: {fileID: 7056757043122261445}
   - component: {fileID: 7912347748633347738}
@@ -38,25 +37,6 @@ Transform:
   - {fileID: 8757952025092894916}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1038330902582225245
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 181382987796143224}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 92ef369df31e415c8957f16e41747659, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RockAndHardPlace.ArtilleryTank
-  playerIndex: 0
-  barrelPivot: {fileID: 8757952025092894916}
-  health: 100
-  ore: 0
-  upgraded: 0
-  angle: 40
-  power: 8
 --- !u!61 &6451471325187582233
 BoxCollider2D:
   m_ObjectHideFlags: 0
