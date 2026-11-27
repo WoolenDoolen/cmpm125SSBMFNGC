@@ -16,14 +16,15 @@ Use **Unity 6000.6.3f1** with the packages pinned in `Packages/manifest.json` (U
 
 Blue and Red share one keyboard. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat.
 
-For a quick demonstration with the current layout, **55 degrees / roughly 6.25 power for Blue or 6 for Red** reaches the mountain. After it leaves, **55 degrees / roughly 12.25 power** reaches the opposing kingdom. These are starting examples; aiming is part of the game.
+For a quick demonstration with the current layout, **55 degrees / roughly 6 power for either side** reaches the mountain. After it leaves, **55 degrees / roughly 11.75 power** reaches the opposing kingdom. These are starting examples; aiming is part of the game.
 
 ## Current foundation
 
 - The team's scene, houses, terrain, loot and reward popup are merged from `Scene-and-Mountain-Update`. The script work was already merged into `main`.
-- The mountain uses saved, editable Unity Tilemaps made from the existing Cainos terrain sprites. Stone, the solid backing layer, ore seams, faces and feet are separate maps.
+- The mountain uses saved, editable Unity Tilemaps made from Kenney's original 21px tiles. Proper slope pieces, a pointed asymmetric outline, shaded rock faces and embedded ore replace the earlier repeated boulder blocks. Ridges, faces and feet are separate maps.
 - Its escape has a wake-up, crouch, rise, forward lean and accelerating alternating steps. Movement starts from its placed position and clears the camera. Colliders switch off on depletion; combat resumes once after the run.
-- The kingdoms keep the team's houses, with matching tilemap ramparts, banners and visible cannons on the actual aiming pivots. Collision follows the mountain, rampart and terrain tiles.
+- Both castles are built entirely from pixel wall, door, window and detail tiles. Flags distinguish the sides, and smaller cannons rotate on the actual aiming pivots. The earlier house images and terrain layout are inactive in Main. Collision follows the new mountain, castle and sloped terrain tiles.
+- A layered valley backdrop includes distant and near mountains, shaded cliff faces, pine trees, a winding river, stepped clouds and a sun. It is original scene geometry with pixel-aligned contours. Foreground soil uses subtle pixel grain and continuous depth shading; the grass cutouts meet the soil without visible tile bands.
 - Seven original sound effects cover firing, stone impacts, kingdom impacts, wake-up, footsteps, upgrades and victory. Adjust `Game Audio` volume on `GameManager` in the Inspector.
 - A match ends when a kingdom reaches zero health. The HUD announces the winner and R restarts. A dedicated game-over screen remains to be made.
 
@@ -31,11 +32,13 @@ The old mountain animation clip/controller remain as reference assets; the playa
 
 ## Editing art and sounds
 
-Expand `Mountain > Mountain Art` in Main. Paint `Mountain Stone` for the surface and `Mountain Core` behind it to avoid gaps between rock sprites. Keep the root at the feet and the body, faces and legs under this hierarchy. `MountainEscape` has their Inspector references.
+Expand `Mountain > Mountain Art` in Main. `Mountain Stone` holds the filled body and sloped outline; `Rock Ridges`, `Ore Seams` and the faces add details at the same pixel scale. Keep the root at the feet and the body, faces and legs under this hierarchy. `MountainEscape` has their Inspector references. The mountain draws behind the foreground hills so its legs do not appear through the dirt when it runs out of the valley.
 
-Each turret has `Kingdom Tilemaps`; `Cannon Tilemaps` is under its barrel pivot. The new tile assets in `Assets/_Project/Art/Tiles` reference the existing sprites.
+Each turret has `Kingdom Tilemaps`; `Cannon Tilemaps` is under its barrel pivot. `Battlefield Terrain` contains the connected grass slopes, solid soil and hill details. `Landscape Background` contains the separate distance layers. Original imported sprites are in `Assets/_Project/Art/KenneyPixel`, and the paintable tiles are in `Assets/_Project/Art/ValleyTiles`. The original atlas index is recorded in `KenneyPixel/SOURCE.txt`. Select solid interior tiles for fill, slope tiles for slopes, and wall-edge pieces only at castle corners.
 
-**Prototype > Rebuild Mountain and Kingdom Tilemaps** replaces these authored mountain, rampart, banner and cannon groups and saves Main. It also replaces manual paint changes inside those groups, so use it deliberately. Other scene content is preserved.
+The backdrop geometry and palette are authored in `ValleyBackdrop.cs`. Its baked meshes/materials are saved under `Assets/_Project/Art/ValleyBackdrop`; no landscape is generated during play. The soil shader is `PixelSoil.shader`.
+
+**Prototype > Rebuild Mountain and Kingdom Tilemaps** replaces the authored mountain, castles, terrain and background groups, applies the camera/HUD framing, and saves Main. It also replaces manual edits inside those groups, so use it deliberately. Gameplay references and the sound setup are preserved.
 
 Effects are imported WAV assets in `Assets/_Project/Audio/Sfx`. Regenerate them with `python scripts/generate_sfx.py`, then use **Prototype > Connect Basic Sound Effects**. The generator uses only the Python standard library and no downloaded samples.
 
@@ -72,6 +75,8 @@ Demonstrate each feature working. The rubric explicitly calls for gameplay, two 
 
 ## Attribution
 
-The concept and pitch came from the team. Terrain sprites and supporting asset scripts come from the imported **Cainos / Pixel Art Platformer - Village Props** pack; its original source headers are preserved. Existing house sprites came from the team's **Medieval - Free** import; confirm and retain its original creator/license details for publication. New tilemap compositions reuse these installed assets.
+The concept and pitch came from the team. The active foreground uses **Kenney / Platformer Art Pixel**, licensed CC0: [original asset page](https://kenney.nl/assets/platformer-art-pixel). Selected source tiles are included without image modification, together with the original `KenneyPixel/License.txt` and provenance notes. The castles are assembled from those artist-created tiles; no generated house images are used in the playable composition.
+
+The layered background is original stepped mesh geometry, taking atmospheric depth and valley composition from the supplied Terraria reference rather than copying its assets. The old Cainos terrain and Medieval - Free house imports remain in the project as team reference assets; their original source headers are preserved.
 
 The new sounds are original procedural effects from `scripts/generate_sfx.py`. OpenAI Codex assisted with implementation, tilemap compositions, animation, sound integration, verification and documentation. The existing reward-popup source also records Claude assistance. No third-party gameplay code was copied for this pass.
