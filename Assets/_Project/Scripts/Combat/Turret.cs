@@ -16,6 +16,7 @@ namespace RockAndHardPlace
 
         [Header("Weapon")]
         [SerializeField] private WeaponData weapon;
+        [SerializeField, Min(0)] private int damageBonus = 0;
 
         [Header("Aim limits")]
         [SerializeField, Range(0, 90)] private float minAngle = 5;
@@ -34,7 +35,7 @@ namespace RockAndHardPlace
         public float Angle { get; private set; }
         public float Power { get; private set; }
 
-        public int Damage => weapon == null ? 0 : (Bank.Upgraded ? weapon.UpgradedDamage : weapon.Damage);
+        public int Damage => weapon == null ? 0 : (Bank.Upgraded ? weapon.UpgradedDamage : weapon.Damage) + damageBonus;
 
         // Works for mirrored turrets (Scale X = -1) because it uses world positions.
         public Vector2 AimDirection => ((Vector2)(muzzle.position - barrelPivot.position)).normalized;
@@ -54,6 +55,11 @@ namespace RockAndHardPlace
         }
 
         public void AdjustAim(float angleDelta, float powerDelta) => SetAim(Angle + angleDelta, Power + powerDelta);
+        public void IncreaseDamage(int amount)
+        {
+            if (amount <= 0) return;
+            damageBonus += amount;
+        }
 
         public Projectile Fire()
         {
