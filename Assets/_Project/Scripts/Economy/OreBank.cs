@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,7 +13,9 @@ namespace RockAndHardPlace
         [SerializeField] private UnityEvent<int> onOreChanged = new UnityEvent<int>();
 
         public int Ore { get; private set; }
-        public bool Upgraded { get; private set; }
+        private readonly HashSet<UpgradeId> upgrades = new HashSet<UpgradeId>();
+
+        public bool Upgraded => HasUpgrade(UpgradeId.ForgedShells);
         public UnityEvent<int> OnOreChanged => onOreChanged;
 
         private void Awake() => Ore = startingOre;
@@ -32,10 +35,15 @@ namespace RockAndHardPlace
             return true;
         }
 
-        public bool TryBuyUpgrade(int cost)
+        public bool HasUpgrade(UpgradeId upgrade) => upgrades.Contains(upgrade);
+
+        public bool TryBuyUpgrade(int cost) => TryUnlock(UpgradeId.ForgedShells, cost);
+
+        internal bool TryUnlock(UpgradeId upgrade, int cost)
         {
-            if (Upgraded || !TrySpend(cost)) return false;
-            Upgraded = true;
+            if (cost < 0 || Ore < cost || !upgrades.Add(upgrade)) return false;
+            Ore -= cost;
+            onOreChanged.Invoke(Ore);
             return true;
         }
     }

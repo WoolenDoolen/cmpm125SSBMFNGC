@@ -14,6 +14,8 @@ namespace RockAndHardPlace
         // Raised once when the shot ends. The collider is what it hit, or null for a miss.
         public event Action<Projectile, Collider2D> Resolved;
         public Turret Shooter { get; private set; }
+        public float MaxLifetime => maxLifetime;
+        public Vector2 ImpactPoint { get; private set; }
 
         private Rigidbody2D body;
         private float lifetime;
@@ -36,7 +38,11 @@ namespace RockAndHardPlace
             if (lifetime > maxLifetime) Finish(null);
         }
 
-        private void OnCollisionEnter2D(Collision2D collision) => Finish(collision.collider);
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            ImpactPoint = collision.contactCount > 0 ? collision.GetContact(0).point : (Vector2)transform.position;
+            Finish(collision.collider);
+        }
 
         private void OnTriggerExit2D(Collider2D other)
         {

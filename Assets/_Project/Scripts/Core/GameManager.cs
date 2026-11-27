@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -5,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace RockAndHardPlace
 {
-    public enum GamePhase { Mining, MountainLeaving, Combat, GameOver }
+    public enum GamePhase { Mining, MountainLeaving, Combat, GameOver, Title }
 
     public sealed class GameManager : MonoBehaviour
     {
@@ -14,6 +15,7 @@ namespace RockAndHardPlace
         [SerializeField] private Turret[] turrets;
         [SerializeField] private Mountain mountain;
         [SerializeField] private LootManager lootManager;
+        [SerializeField] private bool startFromMenu;
 
         [Header("Aiming")]
         [Tooltip("Degrees per second while holding the aim input.")]
@@ -37,11 +39,18 @@ namespace RockAndHardPlace
         public Mountain Mountain => mountain;
         public Turret Winner { get; private set; }
         public bool ShotActive => activeShell != null;
+        public bool IsPaused { get; private set; }
+        public bool EasyMode { get; private set; }
         public string LastEvent { get; private set; } = "Shoot the mountain to collect ore.";
+        public bool HasTurn => Phase == GamePhase.Mining || Phase == GamePhase.Combat;
+        public bool CanAct => isActiveAndEnabled && HasTurn && !IsPaused && !ShotActive;
+        public event Action<Vector2> OreImpact;
 
+        private const string EasyModePreference = "RockAndHardPlace.EasyMode";
+        private static bool startOnReload;
         private Projectile activeShell;
-
-        private bool CanAct => !ShotActive && (Phase == GamePhase.Mining || Phase == GamePhase.Combat);
+        private int ignoreInputFrame = -1;
+        public bool AcceptsKeyboard => Time.frameCount != ignoreInputFrame;
 
         private void Awake()
         {
@@ -50,24 +59,58 @@ namespace RockAndHardPlace
                 Debug.LogError("GameManager needs at least two Turrets and the Mountain assigned.", this);
                 enabled = false;
             }
+            Phase = startFromMenu && !startOnReload ? GamePhase.Title : GamePhase.Mining;
+            startOnReload = false;
+            EasyMode = PlayerPrefs.GetInt(EasyModePreference, 0) != 0;
         }
 
         private void Start()
         {
+            if (Phase == GamePhase.Title) return;
             SetPhase(GamePhase.Mining);
             onTurnStarted.Invoke(CurrentTurret);
+        }
+
+        public void BeginMatch()
+        {
+            if (Phase != GamePhase.Title) return;
+            IgnoreKeyboardThisFrame();
+            SetPhase(GamePhase.Mining);
+            onTurnStarted.Invoke(CurrentTurret);
+        }
+
+        public void SetEasyMode(bool enabled)
+        {
+            EasyMode = enabled;
+            PlayerPrefs.SetInt(EasyModePreference, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        public void SetPaused(bool paused)
+        {
+            if (IsPaused == paused) return;
+            IsPaused = paused;
+            Time.timeScale = paused ? 0 : 1;
+            IgnoreKeyboardThisFrame();
+        }
+
+        public void IgnoreKeyboardThisFrame() => ignoreInputFrame = Time.frameCount;
+
+        private void OnDestroy()
+        {
+            if (IsPaused) Time.timeScale = 1;
         }
 
         // Inputs are -1 to 1; InputReader calls this every frame.
         public void Aim(float angleInput, float powerInput)
         {
-            if (!enabled || !CanAct) return;
+            if (!CanAct) return;
             CurrentTurret.AdjustAim(angleInput * angleSpeed * Time.deltaTime, powerInput * powerSpeed * Time.deltaTime);
         }
 
         public bool TryFire()
         {
-            if (!enabled || !CanAct) return false;
+            if (!CanAct) return false;
             var shell = CurrentTurret.Fire();
             if (shell == null) return false;
             activeShell = shell;
@@ -77,17 +120,30 @@ namespace RockAndHardPlace
             return true;
         }
 
-        public bool TryBuyUpgrade()
+        public bool TryBuyUpgrade() => TryBuyUpgrade(UpgradeId.ForgedShells);
+
+        public bool TryBuyUpgrade(UpgradeId id)
         {
-            if (!enabled || !CanAct) return false;
+            if (!CanAct || (uint)id >= CastleUpgrades.Nodes.Count) return false;
             var turret = CurrentTurret;
-            if (turret.Weapon == null || !turret.Bank.TryBuyUpgrade(turret.Weapon.UpgradeCost)) return false;
-            LastEvent = turret.DisplayName + " bought the upgrade: damage is now " + turret.Damage + ".";
+            var upgrade = CastleUpgrades.Get(id);
+            if (turret.Weapon == null || CastleUpgrades.StateFor(upgrade, turret) != UpgradeState.Available ||
+                !turret.Bank.TryUnlock(id, upgrade.Cost(turret.Weapon))) return false;
+            if (upgrade.HealthBonus > 0) turret.Health.IncreaseMaxHealth(upgrade.HealthBonus);
+            LastEvent = turret.DisplayName + " unlocked " + upgrade.Name + " (" + upgrade.Effect(turret.Weapon) + ").";
             GameAudio.Play(SoundCue.Upgrade);
             return true;
         }
 
-        public void Restart() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        public void Restart() => Reload(true);
+        public void ReturnToTitle() => Reload(false);
+
+        private void Reload(bool startImmediately)
+        {
+            SetPaused(false);
+            startOnReload = startImmediately;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
 
         // Hook this to Mountain > On Left in the Inspector.
         public void OnMountainLeft()
@@ -108,7 +164,11 @@ namespace RockAndHardPlace
             if (Phase == GamePhase.Mining && mountain.Owns(hit))
             {
                 int mined = mountain.Mine(shooter.Bank);
-                if (mined > 0) GameAudio.Play(SoundCue.StoneHit);
+                if (mined > 0)
+                {
+                    GameAudio.Play(SoundCue.StoneHit);
+                    OreImpact?.Invoke(shell.ImpactPoint);
+                }
 
                 string lootMessage = "";
                 if (mined > 0 && lootManager != null)
@@ -122,7 +182,7 @@ namespace RockAndHardPlace
                 if (mountain.IsDepleted)
                 {
                     SetPhase(GamePhase.MountainLeaving);
-                    LastEvent = "The mountain is empty and leaving... " + lootMessage;
+                    LastEvent = "The mountain is getting up... " + lootMessage;
                     return;
                 }
             }

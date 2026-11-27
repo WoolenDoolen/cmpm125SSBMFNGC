@@ -35,10 +35,14 @@ namespace RockAndHardPlace
         public float Angle { get; private set; }
         public float Power { get; private set; }
 
-        public int Damage => weapon == null ? 0 : (Bank.Upgraded ? weapon.UpgradedDamage : weapon.Damage) + damageBonus;
+        public int Damage => weapon == null ? 0 :
+            (Bank.Upgraded ? weapon.UpgradedDamage : weapon.Damage) + damageBonus +
+            (Bank.HasUpgrade(UpgradeId.HeavyShot) ? CastleUpgrades.HeavyShotDamage : 0);
 
         // Works for mirrored turrets (Scale X = -1) because it uses world positions.
         public Vector2 AimDirection => ((Vector2)(muzzle.position - barrelPivot.position)).normalized;
+        public Vector3 MuzzlePosition => muzzle.position;
+        public Vector2 LaunchVelocity => AimDirection * Power;
 
         private void Awake()
         {
@@ -68,8 +72,8 @@ namespace RockAndHardPlace
                 Debug.LogError(name + " needs a Weapon with a Shell Prefab, and a Muzzle.", this);
                 return null;
             }
-            var shell = Instantiate(weapon.ShellPrefab, muzzle.position, Quaternion.identity);
-            shell.Launch(this, AimDirection * Power);
+            var shell = Instantiate(weapon.ShellPrefab, MuzzlePosition, Quaternion.identity);
+            shell.Launch(this, LaunchVelocity);
             return shell;
         }
 
