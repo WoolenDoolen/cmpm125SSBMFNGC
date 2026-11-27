@@ -13,6 +13,7 @@ namespace RockAndHardPlace
         [Tooltip("Turn order. The first turret goes first.")]
         [SerializeField] private Turret[] turrets;
         [SerializeField] private Mountain mountain;
+        [SerializeField] private LootManager lootManager;
 
         [Header("Aiming")]
         [Tooltip("Degrees per second while holding the aim input.")]
@@ -105,12 +106,21 @@ namespace RockAndHardPlace
             if (Phase == GamePhase.Mining && mountain.Owns(hit))
             {
                 int mined = mountain.Mine(shooter.Bank);
+
+                string lootMessage = "";
+                if (mined > 0 && lootManager != null)
+                    lootMessage = lootManager.AwardLoot(shooter);
+
                 LastEvent = shooter.DisplayName + " mined " + mined + " ore.";
+
+                if (!string.IsNullOrEmpty(lootMessage))
+                    LastEvent += " " + lootMessage;
+
                 if (mountain.IsDepleted)
                 {
                     SetPhase(GamePhase.MountainLeaving);
-                    LastEvent = "The mountain is empty and leaving...";
-                    return; // The turn passes in OnMountainLeft.
+                    LastEvent = "The mountain is empty and leaving... " + lootMessage;
+                    return;
                 }
             }
             else if (Phase == GamePhase.Combat && hit != null)
