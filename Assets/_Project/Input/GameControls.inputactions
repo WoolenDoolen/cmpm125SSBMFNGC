@@ -55,6 +55,26 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "WasdAim",
+                    "type": "Value",
+                    "id": "fbb45c42-8fb5-4fd4-898d-19720696cc16",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
+                },
+                {
+                    "name": "WasdPower",
+                    "type": "Value",
+                    "id": "12adf078-fdb7-4eb2-bc76-b732ba04dc30",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -164,7 +184,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Aim",
+                    "action": "WasdAim",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -175,7 +195,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Aim",
+                    "action": "WasdAim",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -186,7 +206,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Aim",
+                    "action": "WasdAim",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -197,7 +217,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Power",
+                    "action": "WasdPower",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -208,7 +228,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Power",
+                    "action": "WasdPower",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -219,7 +239,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Power",
+                    "action": "WasdPower",
                     "isComposite": false,
                     "isPartOfComposite": true
                 }

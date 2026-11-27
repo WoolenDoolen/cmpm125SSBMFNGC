@@ -66,7 +66,7 @@ namespace RockAndHardPlace
                 var card = MatchUi.Child(canvas, turret.DisplayName + " kingdom status");
                 var anchor = i == 0 ? Vector2.up : Vector2.one;
                 MatchUi.Anchor(card, anchor, new Vector2(i == 0 ? 20 : -20, -22), new Vector2(334, 112));
-                castles[i] = new CastleStatus(card, Font, turret);
+                castles[i] = new CastleStatus(card, Font, turret, i == 0 ? "WASD" : "ARROWS");
                 matchWidgets[4 + i] = card.gameObject;
             }
         }
@@ -152,7 +152,7 @@ namespace RockAndHardPlace
             private int previousHealth;
             private float hitFlash;
 
-            public CastleStatus(RectTransform card, TMP_FontAsset font, Turret turret)
+            public CastleStatus(RectTransform card, TMP_FontAsset font, Turret turret, string aimKeys)
             {
                 Turret = turret;
                 team = MatchUi.Team(turret);
@@ -168,8 +168,10 @@ namespace RockAndHardPlace
                 MatchUi.Fill(track, new Color32(53, 59, 65, 255));
                 trail = HealthFill(track, "Damage trail", MatchUi.Gold);
                 fill = HealthFill(track, "Remaining health", team);
-                stats = MatchUi.Text(MatchUi.At(card, "Ore and damage", 17, 74, 300, 28),
+                stats = MatchUi.Text(MatchUi.At(card, "Ore and damage", 17, 74, 223, 28),
                     font, "", 21, MatchUi.Muted);
+                MatchUi.Text(MatchUi.At(card, "Aim keys", 246, 74, 72, 28), font, aimKeys, 16, team,
+                    TextAlignmentOptions.MidlineRight, true);
             }
 
             public void Refresh(bool active)

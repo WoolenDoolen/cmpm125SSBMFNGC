@@ -8,14 +8,16 @@ Use **Unity 6000.6.3f1** with the packages pinned in `Packages/manifest.json` (U
 
 | Control | Action |
 | --- | --- |
-| W / S or Up / Down | Raise / lower the barrel angle |
-| A / D or Left / Right | Lower / raise shot power |
+| Blue W / S | Raise / lower the barrel angle |
+| Blue A / D | Lower / raise shot power |
+| Red Up / Down | Raise / lower the barrel angle |
+| Red Left / Right | Lower / raise shot power |
 | Space | Fire; the turn passes after the shot resolves |
 | U | Open or close the acting castle's upgrade tree |
 | Esc | Pause, resume or go back from a menu |
 | R | Restart the match |
 
-Choose **Play local match** from the title screen. Blue and Red share one keyboard, and a gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact for both players. The setting carries across matches.
+Choose **Play local match** from the title screen. Blue uses WASD and Red uses the arrows on their respective turns. They share Space to fire and U for upgrades. A gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact for both players. The setting carries across matches.
 
 Each castle spends its own ore. Every node currently costs 20 ore and can be bought once. Buying a node leaves the shot available that turn.
 
@@ -55,7 +57,7 @@ Effects are imported WAV assets in `Assets/_Project/Audio/Sfx`. Regenerate them 
 
 Use **Prototype > Build Windows Prototype**. The default build is `Builds/Windows/BetweenARock.exe`. The latest local feedback build is in `Builds/Playtest`. Keep the executable beside its Data folder and Unity DLLs. Builds and verification output are ignored by Git.
 
-The opt-in `-foundationSmokeTest` argument exercises the menus, WASD, EZ aim, upgrade branches, turn outlines and a full match through rematch. It exits with code 0 on success and writes `Logs/FoundationCheck/result.txt` and screenshots.
+The opt-in `-foundationSmokeTest` argument exercises the menus, both players' key sets, EZ aim, upgrade branches, turn outlines and a full match through rematch. It exits with code 0 on success and writes `Logs/FoundationCheck/result.txt` and screenshots.
 
 For an Editor check, launch Unity with `-batchmode -projectPath "<repository path>" -executeMethod FoundationValidation.Run -foundationSmokeTest -logFile "Logs/foundation-play.log"`. Omit `-quit`: the check exits Unity when finished.
 

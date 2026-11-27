@@ -191,12 +191,14 @@ namespace RockAndHardPlace
                 "<b>Duel.</b> After the mountain leaves, drop the enemy castle to zero HP.";
             Text(panel, "Match rules", rules, 42, 163, 484, 247, 24, MatchUi.TextColor, TextAlignmentOptions.TopLeft);
             Text(panel, "Controls heading", "Controls", 565, 113, 473, 40, 28, MatchUi.Gold, bold: true);
-            string[] keys = { "W / S  or  ↑ / ↓", "A / D  or  ← / →", "Space", "U", "Esc", "R" };
-            string[] actions = { "Raise / lower aim", "Lower / raise power", "Fire", "Open the upgrade tree", "Pause / back", "Restart match" };
+            string[] keys = { "Blue    W / S", "Blue    A / D", "Red     ↑ / ↓", "Red     ← / →", "Space", "U", "Esc", "R" };
+            string[] actions = { "Raise / lower aim", "Lower / raise power", "Raise / lower aim", "Lower / raise power",
+                "Fire on your turn", "Open your upgrade tree", "Pause / back", "Restart match" };
             for (int i = 0; i < keys.Length; i++)
             {
-                Text(panel, keys[i], keys[i], 565, 160 + i * 37, 200, 35, 23, MatchUi.TextColor, bold: true);
-                Text(panel, actions[i], actions[i], 778, 160 + i * 37, 260, 35, 23, MatchUi.Muted);
+                Color keyColor = i < 2 ? MatchUi.Blue : i < 4 ? MatchUi.Red : MatchUi.TextColor;
+                Text(panel, keys[i], keys[i], 565, 160 + i * 31, 200, 30, 22, keyColor, bold: true);
+                Text(panel, actions[i], actions[i], 778, 160 + i * 31, 260, 30, 22, MatchUi.Muted);
             }
             MatchUi.Fill(MatchUi.At(panel, "Divider", 42, 420, 996, 2), MatchUi.Edge);
             Text(panel, "Upgrade guide heading", "Upgrade tree", 42, 425, 996, 47, 28, MatchUi.Gold, bold: true);

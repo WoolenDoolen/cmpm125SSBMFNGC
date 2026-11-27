@@ -74,7 +74,7 @@ namespace RockAndHardPlace
             Click("Play local match");
             Check(game.Phase == GamePhase.Mining, "Play starts the mining phase.");
             trajectory = new ShotTrajectory();
-            yield return CheckKeyboard();
+            yield return CheckKeyboard(useWasd: true);
 
             yield return Tap(Key.Escape);
             Check(game.IsPaused && !game.TryFire(), "Escape opens Pause and blocks firing.");
@@ -140,7 +140,10 @@ namespace RockAndHardPlace
                 yield return WaitForShot();
                 Check(mountain.OreRemaining == Mathf.Max(0, before - mountain.OrePerHit), "A real projectile mines exactly one reward.");
                 if (hit == 0)
+                {
                     Check(Line("Red turn outline").enabled && !Line("Blue turn outline").enabled, "The outline passes to Red.");
+                    yield return CheckKeyboard(useWasd: false);
+                }
             }
             Check(game.Phase == GamePhase.MountainLeaving, "Depletion starts the escape phase.");
             Check(!game.TryFire() && !game.TryBuyUpgrade(), "Combat and purchases pause during the escape.");
@@ -200,33 +203,30 @@ namespace RockAndHardPlace
             yield return null;
             game = FindAnyObjectByType<GameManager>();
             Check(game != null && game.Phase == GamePhase.Title, "Main Menu returns to the title screen.");
-            Finish(0, "FOUNDATION CHECK PASSED: menus, WASD, EZ arc, both upgrade branches, castle turns, mining, sprint, combat, win, rematch.");
+            Finish(0, "FOUNDATION CHECK PASSED: menus, separate player controls, EZ arc, both upgrade branches, castle turns, mining, sprint, combat, win, rematch.");
         }
 
-        private IEnumerator CheckKeyboard()
+        private IEnumerator CheckKeyboard(bool useWasd)
         {
             var turret = game.CurrentTurret;
             float angle = turret.Angle;
             float power = turret.Power;
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W, Key.D));
-            yield return null;
-            yield return null;
+            yield return Tap(useWasd ? Key.UpArrow : Key.W, useWasd ? Key.RightArrow : Key.D);
+            Check(turret.Angle == angle && turret.Power == power, turret.DisplayName + " ignores the other player's key set.");
+            yield return Tap(useWasd ? Key.W : Key.UpArrow, useWasd ? Key.D : Key.RightArrow);
             Check(turret.Angle > angle && turret.Power > power,
-                $"W raises aim and D raises power. Aim {turret.Angle}, power {turret.Power}, W pressed {keyboard.wKey.isPressed}.");
-            angle = turret.Angle;
-            power = turret.Power;
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S, Key.A));
-            yield return null;
-            yield return null;
-            Check(turret.Angle < angle && turret.Power < power, "S lowers aim and A lowers power.");
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
-            yield return null;
-            turret.SetAim(40, 8);
+                turret.DisplayName + " can raise aim and power with their keys.");
+            float raisedAngle = turret.Angle;
+            float raisedPower = turret.Power;
+            yield return Tap(useWasd ? Key.S : Key.DownArrow, useWasd ? Key.A : Key.LeftArrow);
+            Check(turret.Angle < raisedAngle && turret.Power < raisedPower,
+                turret.DisplayName + " can lower aim and power with their keys.");
+            turret.SetAim(angle, power);
         }
 
-        private IEnumerator Tap(Key key)
+        private IEnumerator Tap(params Key[] keys)
         {
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys));
             yield return null;
             yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
