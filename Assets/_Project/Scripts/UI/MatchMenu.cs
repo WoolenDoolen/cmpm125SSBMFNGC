@@ -66,7 +66,7 @@ namespace RockAndHardPlace
         public void ToggleUpgrades()
         {
             if (current == Page.Upgrades) Show(Page.Closed);
-            else if (current == Page.Closed && game.CanAct) Show(Page.Upgrades);
+            else if (current == Page.Closed && game.CanHumanAct) Show(Page.Upgrades);
         }
 
         private void OpenFrom(Page next)
@@ -93,7 +93,7 @@ namespace RockAndHardPlace
             if (next == Page.Upgrades) RefreshUpgrades();
             if (next == Page.Results)
             {
-                resultTitle.text = game.Winner.DisplayName + " wins";
+                resultTitle.text = game.Winner.DisplayName + (game.IsCpu(game.Winner) ? " CPU wins" : " wins");
                 resultTitle.color = MatchUi.Team(game.Winner);
                 foreach (var turret in game.Turrets)
                     if (turret != game.Winner) resultSubtitle.text = turret.DisplayName + " castle fell.";
@@ -135,21 +135,25 @@ namespace RockAndHardPlace
 
         private void BuildTitle()
         {
-            var panel = Panel(Page.Title, 660, 566);
-            MatchUi.Anchor(panel, new Vector2(0.29f, 0.5f), new Vector2(0, 0), new Vector2(660, 566));
+            var panel = Panel(Page.Title, 660, 632);
+            MatchUi.Anchor(panel, new Vector2(0.29f, 0.5f), Vector2.zero, panel.sizeDelta);
             panel.pivot = new Vector2(0.5f, 0.5f);
             Text(panel, "Game title", "Between a Rock\nand a Hard Place", 42, 38, 576, 153, 63,
                 MatchUi.TextColor, TextAlignmentOptions.Center, true);
-            Text(panel, "Match type", "Local two-player artillery", 42, 196, 576, 43, 25,
+            Text(panel, "Mode prompt", "Choose a mode", 42, 195, 576, 43, 25,
                 MatchUi.Muted, TextAlignmentOptions.Center);
-            firstButtons[Page.Title] = Button(panel, "Play local match", () =>
-            {
-                game.BeginMatch();
-                Show(Page.Closed);
-            }, 114, 266, 432, 66, true);
-            Button(panel, "How to Play", () => OpenFrom(Page.Help), 114, 345, 432);
-            Button(panel, "Options", () => OpenFrom(Page.Options), 114, 413, 432);
-            Button(panel, "Credits", () => OpenFrom(Page.Credits), 114, 481, 432);
+            firstButtons[Page.Title] = Button(panel, "Single Player", () => StartMode(MatchMode.SinglePlayer),
+                114, 252, 432, 66, true);
+            Button(panel, "2 Player", () => StartMode(MatchMode.TwoPlayer), 114, 330, 432, 66);
+            Button(panel, "How to Play", () => OpenFrom(Page.Help), 114, 410, 432);
+            Button(panel, "Options", () => OpenFrom(Page.Options), 114, 478, 432);
+            Button(panel, "Credits", () => OpenFrom(Page.Credits), 114, 546, 432);
+        }
+
+        private void StartMode(MatchMode mode)
+        {
+            game.BeginMatch(mode);
+            Show(Page.Closed);
         }
 
         private void BuildPause()
@@ -174,7 +178,7 @@ namespace RockAndHardPlace
             }, 492, 114, 146);
             optionValue = toggle.GetComponentInChildren<TMP_Text>();
             firstButtons[Page.Options] = toggle;
-            Text(panel, "EZ Mode description", "Show where your shell will fly and where it will hit. Both players see the arc while aiming.",
+            Text(panel, "EZ Mode description", "Show your shell's predicted path and first impact while you aim.",
                 42, 182, 596, 74, 24, MatchUi.Muted, TextAlignmentOptions.TopLeft);
             Button(panel, "Back", () => Show(backPage), 42, 268, 184);
         }
@@ -186,10 +190,15 @@ namespace RockAndHardPlace
             var panel = Panel(Page.Help, 1080, 660);
             Heading(panel, "How to Play", 1080);
             Text(panel, "Match heading", "The match", 42, 113, 480, 40, 28, MatchUi.Gold, bold: true);
-            string rules = "<b>Mine.</b> Take turns on one keyboard. Hit the mountain for ore and loot.\n\n" +
-                "<b>Upgrade.</b> Spend ore on your turn. You can still fire after buying.\n\n" +
-                "<b>Duel.</b> After the mountain leaves, drop the enemy castle to zero HP.";
-            Text(panel, "Match rules", rules, 42, 163, 484, 247, 24, MatchUi.TextColor, TextAlignmentOptions.TopLeft);
+            string[] rules =
+            {
+                "<b>Single Player.</b> You play Blue with WASD or arrows. The CPU plays Red.",
+                "<b>2 Player.</b> Share a keyboard and use your side's keys.",
+                "<b>Mine and upgrade.</b> Hit the mountain for ore and loot. Spend ore before firing.",
+                "<b>Duel.</b> Once the mountain leaves, bring the other castle to zero HP."
+            };
+            for (int i = 0; i < rules.Length; i++)
+                Text(panel, "Match rule " + (i + 1), rules[i], 42, 163 + i * 61, 484, 57, 22, MatchUi.TextColor, TextAlignmentOptions.TopLeft);
             Text(panel, "Controls heading", "Controls", 565, 113, 473, 40, 28, MatchUi.Gold, bold: true);
             string[] keys = { "Blue    W / S", "Blue    A / D", "Red     ↑ / ↓", "Red     ← / →", "Space", "U", "Esc", "R" };
             string[] actions = { "Raise / lower aim", "Lower / raise power", "Raise / lower aim", "Lower / raise power",

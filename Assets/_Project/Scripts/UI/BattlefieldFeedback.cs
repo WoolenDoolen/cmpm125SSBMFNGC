@@ -62,7 +62,7 @@ namespace RockAndHardPlace
         {
             bool visible = !menu.IsOpen;
             foreach (var castle in castles) castle.Refresh(game, visible);
-            UpdateArc(visible && game.EasyMode && game.CanAct);
+            UpdateArc(visible && game.EasyMode && game.CanHumanAct);
             UpdateChips(visible);
         }
 

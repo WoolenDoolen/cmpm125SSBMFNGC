@@ -51,13 +51,18 @@ namespace RockAndHardPlace
                 return;
             }
             if (matchMenu != null && matchMenu.IsOpen) return;
-            // The first castle (Blue in Main) uses WASD. Red uses the arrow keys.
-            bool firstPlayer = gameManager.CurrentIndex == 0;
-            var turnAim = firstPlayer && wasdAim != null ? wasdAim : aim?.action;
-            var turnPower = firstPlayer && wasdPower != null ? wasdPower : power?.action;
-            gameManager.Aim(turnAim?.ReadValue<float>() ?? 0, turnPower?.ReadValue<float>() ?? 0);
+            if (!gameManager.CanHumanAct) return;
+            gameManager.Aim(ReadAxis(wasdAim, aim?.action), ReadAxis(wasdPower, power?.action));
             if (WasPressed(upgrade)) gameManager.TryBuyUpgrade();
             if (WasPressed(fire)) gameManager.TryFire();
+        }
+
+        private float ReadAxis(InputAction wasd, InputAction arrows)
+        {
+            float keyboard = wasd?.ReadValue<float>() ?? 0;
+            float arrowKeys = arrows?.ReadValue<float>() ?? 0;
+            if (gameManager.Mode == MatchMode.SinglePlayer) return keyboard != 0 ? keyboard : arrowKeys;
+            return gameManager.CurrentIndex == 0 && wasd != null ? keyboard : arrowKeys;
         }
 
         private static bool WasPressed(InputActionReference reference) =>

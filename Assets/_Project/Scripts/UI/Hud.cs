@@ -123,15 +123,16 @@ namespace RockAndHardPlace
             if (hasTurn)
             {
                 builder.Append("<size=28><b><color=#").Append(ColorUtility.ToHtmlStringRGB(MatchUi.Team(active)))
-                    .Append(">").Append(active.DisplayName.ToUpperInvariant())
-                    .Append(gameManager.ShotActive ? "'S SHOT" : "'S TURN").Append("</color></b></size>\n");
+                    .Append(">").Append(active.DisplayName.ToUpperInvariant());
+                if (gameManager.IsCpuTurn) builder.Append(" CPU");
+                builder.Append(gameManager.ShotActive ? "'S SHOT" : "'S TURN").Append("</color></b></size>\n");
                 builder.Append("Aim ").Append(active.Angle.ToString("F1")).Append("°    Power ")
                     .Append(active.Power.ToString("F1")).Append('\n');
                 if (gameManager.Phase == GamePhase.Mining)
                     builder.Append("Mountain ore ").Append(gameManager.Mountain.OreRemaining)
                         .Append(" / ").Append(gameManager.Mountain.StartingOre);
                 else builder.Append("Kingdom duel");
-                if (gameManager.EasyMode) builder.Append("    ·    EZ");
+                if (gameManager.EasyMode && !gameManager.IsCpuTurn) builder.Append("    ·    EZ");
             }
             else
             {
@@ -139,15 +140,17 @@ namespace RockAndHardPlace
             }
             statusText.SetText(builder);
             eventText.SetText(gameManager.LastEvent);
-            upgradesButton.interactable = gameManager.CanAct;
-            foreach (var castle in castles) castle.Refresh(hasTurn && castle.Turret == active);
+            upgradesButton.interactable = gameManager.CanHumanAct;
+            foreach (var castle in castles)
+                castle.Refresh(hasTurn && castle.Turret == active, gameManager.IsCpu(castle.Turret));
         }
 
         private sealed class CastleStatus
         {
             public Turret Turret { get; }
             private readonly Image rule, fill, trail;
-            private readonly TMP_Text hp, stats;
+            private readonly TMP_Text hp, stats, keys;
+            private readonly string aimKeys;
             private readonly Color team;
             private int previousHealth;
             private float hitFlash;
@@ -155,6 +158,7 @@ namespace RockAndHardPlace
             public CastleStatus(RectTransform card, TMP_FontAsset font, Turret turret, string aimKeys)
             {
                 Turret = turret;
+                this.aimKeys = aimKeys;
                 team = MatchUi.Team(turret);
                 previousHealth = turret.Health.Current;
                 MatchUi.Fill(card, new Color32(22, 32, 39, 237));
@@ -170,11 +174,11 @@ namespace RockAndHardPlace
                 fill = HealthFill(track, "Remaining health", team);
                 stats = MatchUi.Text(MatchUi.At(card, "Ore and damage", 17, 74, 223, 28),
                     font, "", 21, MatchUi.Muted);
-                MatchUi.Text(MatchUi.At(card, "Aim keys", 246, 74, 72, 28), font, aimKeys, 16, team,
+                keys = MatchUi.Text(MatchUi.At(card, "Aim keys", 246, 74, 72, 28), font, aimKeys, 16, team,
                     TextAlignmentOptions.MidlineRight, true);
             }
 
-            public void Refresh(bool active)
+            public void Refresh(bool active, bool cpu)
             {
                 int current = Turret.Health.Current;
                 int max = Turret.Health.Max;
@@ -189,6 +193,7 @@ namespace RockAndHardPlace
                 hp.color = Color.Lerp(MatchUi.TextColor, MatchUi.Red, hitFlash / 0.36f);
                 hp.text = current + "/" + max + " HP";
                 stats.text = "Ore " + Turret.Bank.Ore + "    ·    Damage " + Turret.Damage;
+                keys.text = cpu ? "CPU" : aimKeys;
                 rule.color = active ? team : new Color(team.r, team.g, team.b, 0.23f);
             }
 

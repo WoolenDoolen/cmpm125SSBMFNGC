@@ -71,8 +71,8 @@ namespace RockAndHardPlace
             if (!game.EasyMode) Click("EZ Mode Toggle");
             yield return Capture("00-options");
             Click("Back");
-            Click("Play local match");
-            Check(game.Phase == GamePhase.Mining, "Play starts the mining phase.");
+            Click("2 Player");
+            Check(game.Mode == MatchMode.TwoPlayer && game.Phase == GamePhase.Mining, "2 Player starts a local match.");
             trajectory = new ShotTrajectory();
             yield return CheckKeyboard(useWasd: true);
 
@@ -194,8 +194,8 @@ namespace RockAndHardPlace
             yield return null;
             yield return null;
             game = FindAnyObjectByType<GameManager>();
-            Check(game != null && game != oldGame && game.Phase == GamePhase.Mining && !game.Mountain.HasLeft && game.EasyMode &&
-                game.Turrets[0].Bank.Ore == 0 && !game.Turrets[0].Bank.Upgraded,
+            Check(game != null && game != oldGame && game.Mode == MatchMode.TwoPlayer && game.Phase == GamePhase.Mining &&
+                !game.Mountain.HasLeft && game.EasyMode && game.Turrets[0].Bank.Ore == 0 && !game.Turrets[0].Bank.Upgraded,
                 "Rematch resets the battlefield and upgrades while keeping the EZ setting.");
             yield return Tap(Key.Escape);
             Click("Main Menu");
@@ -203,7 +203,67 @@ namespace RockAndHardPlace
             yield return null;
             game = FindAnyObjectByType<GameManager>();
             Check(game != null && game.Phase == GamePhase.Title, "Main Menu returns to the title screen.");
-            Finish(0, "FOUNDATION CHECK PASSED: menus, separate player controls, EZ arc, both upgrade branches, castle turns, mining, sprint, combat, win, rematch.");
+            yield return CheckSinglePlayer();
+            Finish(0, "FOUNDATION CHECK PASSED: 2 Player match through rematch and Single Player controls, CPU mining, upgrades, combat, pause, and restart.");
+        }
+
+        private IEnumerator CheckSinglePlayer()
+        {
+            Click("Single Player");
+            Check(game.Mode == MatchMode.SinglePlayer && game.Phase == GamePhase.Mining && game.CanHumanAct,
+                "Single Player starts with Blue in control.");
+            trajectory = new ShotTrajectory();
+            yield return CheckKeyboard(useWasd: true);
+            yield return CheckKeyboard(useWasd: false);
+            var mountain = game.Mountain;
+            var cpu = game.Turrets[1];
+            for (int round = 0; game.Phase == GamePhase.Mining && round < 4; round++)
+            {
+                Check(FindShot(mountain.Owns) && game.TryFire(), "Blue can mine in Single Player.");
+                yield return WaitForShot();
+                if (game.Phase == GamePhase.MountainLeaving) break;
+                Check(game.IsCpuTurn, "The opponent gets the next turn.");
+                if (round == 0)
+                {
+                    Check(!Line("EZ trajectory").enabled && !Control("Open upgrade tree").interactable,
+                        "The arc and purchase button are unavailable during the CPU turn.");
+                    Check(!game.TryFire() && !game.TryBuyUpgrade(), "The player cannot fire or purchase for the CPU.");
+                    yield return Capture("07-solo-turn");
+                    yield return Tap(Key.Escape);
+                    Check(game.IsPaused, "The player can pause the CPU's turn.");
+                    float angle = cpu.Angle;
+                    yield return new WaitForSecondsRealtime(1.1f);
+                    Check(game.IsCpuTurn && !game.ShotActive && cpu.Angle == angle, "The opponent waits while paused.");
+                    Click("Resume");
+                }
+                int ore = mountain.OreRemaining;
+                yield return WaitForCpuShot();
+                Check(mountain.OreRemaining < ore, "The CPU collects ore with a real shot.");
+            }
+            Check(game.Phase == GamePhase.MountainLeaving && cpu.Bank.HasUpgrade(UpgradeId.ForgedShells),
+                "The CPU spends its ore before the mountain leaves.");
+            while (game.Phase == GamePhase.MountainLeaving) yield return null;
+            Check(game.Phase == GamePhase.Combat, "Single Player continues into combat.");
+            if (game.CanHumanAct)
+            {
+                Check(FindShot(c => c.GetComponentInParent<Turret>() == cpu) && game.TryFire(),
+                    "Blue can hit the CPU castle.");
+                yield return WaitForShot();
+            }
+            int health = game.Turrets[0].Health.Current;
+            yield return WaitForCpuShot();
+            Check(game.Turrets[0].Health.Current < health, "The CPU can damage Blue in combat.");
+            yield return Tap(Key.R);
+            game = FindAnyObjectByType<GameManager>();
+            Check(game != null && game.Mode == MatchMode.SinglePlayer && game.Phase == GamePhase.Mining && game.CanHumanAct,
+                "Restart preserves Single Player and returns control to Blue.");
+        }
+
+        private IEnumerator WaitForCpuShot()
+        {
+            while (game.IsCpuTurn && !game.ShotActive) yield return null;
+            Check(game.ShotActive, "The CPU fires on its own.");
+            yield return WaitForShot();
         }
 
         private IEnumerator CheckKeyboard(bool useWasd)
@@ -211,8 +271,11 @@ namespace RockAndHardPlace
             var turret = game.CurrentTurret;
             float angle = turret.Angle;
             float power = turret.Power;
-            yield return Tap(useWasd ? Key.UpArrow : Key.W, useWasd ? Key.RightArrow : Key.D);
-            Check(turret.Angle == angle && turret.Power == power, turret.DisplayName + " ignores the other player's key set.");
+            if (game.Mode == MatchMode.TwoPlayer)
+            {
+                yield return Tap(useWasd ? Key.UpArrow : Key.W, useWasd ? Key.RightArrow : Key.D);
+                Check(turret.Angle == angle && turret.Power == power, turret.DisplayName + " ignores the other player's key set.");
+            }
             yield return Tap(useWasd ? Key.W : Key.UpArrow, useWasd ? Key.D : Key.RightArrow);
             Check(turret.Angle > angle && turret.Power > power,
                 turret.DisplayName + " can raise aim and power with their keys.");

@@ -17,7 +17,9 @@ Use **Unity 6000.6.3f1** with the packages pinned in `Packages/manifest.json` (U
 | Esc | Pause, resume or go back from a menu |
 | R | Restart the match |
 
-Choose **Play local match** from the title screen. Blue uses WASD and Red uses the arrows on their respective turns. They share Space to fire and U for upgrades. A gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact for both players. The setting carries across matches.
+Choose **Single Player** to play Blue against the Red CPU. In solo play you can aim with WASD or the arrows. Choose **2 Player** to share a keyboard, with WASD for Blue and arrows for Red. Human players use Space to fire and U for upgrades on their turn. Rematches keep the selected mode.
+
+A gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact while you aim. The setting carries across matches.
 
 Each castle spends its own ore. Every node currently costs 20 ore and can be bought once. Buying a node leaves the shot available that turn.
 
@@ -57,7 +59,7 @@ Effects are imported WAV assets in `Assets/_Project/Audio/Sfx`. Regenerate them 
 
 Use **Prototype > Build Windows Prototype**. The default build is `Builds/Windows/BetweenARock.exe`. The latest local feedback build is in `Builds/Playtest`. Keep the executable beside its Data folder and Unity DLLs. Builds and verification output are ignored by Git.
 
-The opt-in `-foundationSmokeTest` argument exercises the menus, both players' key sets, EZ aim, upgrade branches, turn outlines and a full match through rematch. It exits with code 0 on success and writes `Logs/FoundationCheck/result.txt` and screenshots.
+The opt-in `-foundationSmokeTest` argument exercises a full 2 Player match through rematch, then checks the solo opponent's mining, upgrades, combat, pause and restart. It exits with code 0 on success and writes `Logs/FoundationCheck/result.txt` and screenshots.
 
 For an Editor check, launch Unity with `-batchmode -projectPath "<repository path>" -executeMethod FoundationValidation.Run -foundationSmokeTest -logFile "Logs/foundation-play.log"`. Omit `-quit`: the check exits Unity when finished.
 

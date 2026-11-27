@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 namespace RockAndHardPlace
 {
     public enum GamePhase { Mining, MountainLeaving, Combat, GameOver, Title }
+    public enum MatchMode { TwoPlayer, SinglePlayer }
 
     public sealed class GameManager : MonoBehaviour
     {
@@ -33,6 +34,7 @@ namespace RockAndHardPlace
         [SerializeField] private UnityEvent<Turret> onGameOver = new UnityEvent<Turret>();
 
         public GamePhase Phase { get; private set; }
+        public MatchMode Mode { get; private set; }
         public int CurrentIndex { get; private set; }
         public Turret CurrentTurret => turrets[CurrentIndex];
         public IReadOnlyList<Turret> Turrets => turrets;
@@ -44,11 +46,14 @@ namespace RockAndHardPlace
         public string LastEvent { get; private set; } = "Shoot the mountain to collect ore.";
         public bool HasTurn => Phase == GamePhase.Mining || Phase == GamePhase.Combat;
         public bool CanAct => isActiveAndEnabled && HasTurn && !IsPaused && !ShotActive;
+        public bool IsCpuTurn => HasTurn && IsCpu(CurrentTurret);
+        public bool CanHumanAct => CanAct && !IsCpuTurn;
         public event Action<Vector2> OreImpact;
 
         private const string EasyModePreference = "RockAndHardPlace.EasyMode";
-        private static bool startOnReload;
+        private static MatchMode? modeOnReload;
         private Projectile activeShell;
+        private CastleOpponent opponent;
         private int ignoreInputFrame = -1;
         public bool AcceptsKeyboard => Time.frameCount != ignoreInputFrame;
 
@@ -59,25 +64,39 @@ namespace RockAndHardPlace
                 Debug.LogError("GameManager needs at least two Turrets and the Mountain assigned.", this);
                 enabled = false;
             }
-            Phase = startFromMenu && !startOnReload ? GamePhase.Title : GamePhase.Mining;
-            startOnReload = false;
+            Phase = startFromMenu && !modeOnReload.HasValue ? GamePhase.Title : GamePhase.Mining;
+            Mode = modeOnReload ?? MatchMode.TwoPlayer;
+            modeOnReload = null;
             EasyMode = PlayerPrefs.GetInt(EasyModePreference, 0) != 0;
         }
 
         private void Start()
         {
             if (Phase == GamePhase.Title) return;
+            StartMatch(Mode);
+        }
+
+        public void BeginMatch(MatchMode mode = MatchMode.TwoPlayer)
+        {
+            if (Phase != GamePhase.Title) return;
+            IgnoreKeyboardThisFrame();
+            StartMatch(mode);
+        }
+
+        private void StartMatch(MatchMode mode)
+        {
+            Mode = mode;
+            if (Mode == MatchMode.SinglePlayer) opponent = new CastleOpponent(this);
             SetPhase(GamePhase.Mining);
             onTurnStarted.Invoke(CurrentTurret);
         }
 
-        public void BeginMatch()
+        private void Update()
         {
-            if (Phase != GamePhase.Title) return;
-            IgnoreKeyboardThisFrame();
-            SetPhase(GamePhase.Mining);
-            onTurnStarted.Invoke(CurrentTurret);
+            if (CanAct && IsCpuTurn) opponent.Tick(Time.deltaTime);
         }
+
+        internal bool IsCpu(Turret turret) => Mode == MatchMode.SinglePlayer && turret == turrets[1];
 
         public void SetEasyMode(bool enabled)
         {
@@ -104,13 +123,16 @@ namespace RockAndHardPlace
         // Inputs are -1 to 1; InputReader calls this every frame.
         public void Aim(float angleInput, float powerInput)
         {
-            if (!CanAct) return;
+            if (!CanHumanAct) return;
             CurrentTurret.AdjustAim(angleInput * angleSpeed * Time.deltaTime, powerInput * powerSpeed * Time.deltaTime);
         }
 
-        public bool TryFire()
+        public bool TryFire() => CanHumanAct && FireCurrentTurret();
+
+        internal bool TryFireCpu() => CanAct && IsCpuTurn && FireCurrentTurret();
+
+        private bool FireCurrentTurret()
         {
-            if (!CanAct) return false;
             var shell = CurrentTurret.Fire();
             if (shell == null) return false;
             activeShell = shell;
@@ -122,9 +144,13 @@ namespace RockAndHardPlace
 
         public bool TryBuyUpgrade() => TryBuyUpgrade(UpgradeId.ForgedShells);
 
-        public bool TryBuyUpgrade(UpgradeId id)
+        public bool TryBuyUpgrade(UpgradeId id) => CanHumanAct && BuyForCurrentTurret(id);
+
+        internal bool TryBuyCpuUpgrade(UpgradeId id) => CanAct && IsCpuTurn && BuyForCurrentTurret(id);
+
+        private bool BuyForCurrentTurret(UpgradeId id)
         {
-            if (!CanAct || (uint)id >= CastleUpgrades.Nodes.Count) return false;
+            if ((uint)id >= CastleUpgrades.Nodes.Count) return false;
             var turret = CurrentTurret;
             var upgrade = CastleUpgrades.Get(id);
             if (turret.Weapon == null || CastleUpgrades.StateFor(upgrade, turret) != UpgradeState.Available ||
@@ -135,13 +161,13 @@ namespace RockAndHardPlace
             return true;
         }
 
-        public void Restart() => Reload(true);
-        public void ReturnToTitle() => Reload(false);
+        public void Restart() => Reload(Mode);
+        public void ReturnToTitle() => Reload(null);
 
-        private void Reload(bool startImmediately)
+        private void Reload(MatchMode? mode)
         {
             SetPaused(false);
-            startOnReload = startImmediately;
+            modeOnReload = mode;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
@@ -210,6 +236,7 @@ namespace RockAndHardPlace
         private void NextTurn()
         {
             CurrentIndex = (CurrentIndex + 1) % turrets.Length;
+            opponent?.ResetTurn();
             onTurnStarted.Invoke(CurrentTurret);
         }
 
