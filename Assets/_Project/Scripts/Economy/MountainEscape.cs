@@ -73,6 +73,7 @@ namespace RockAndHardPlace
             if (restingFace != null) restingFace.SetActive(false);
             if (awakeFace != null) awakeFace.SetActive(true);
             IsRunning = true;
+            GameAudio.Play(SoundCue.MountainWake);
             Apply(Sample(0, travel, strideLength));
         }
 
@@ -93,12 +94,13 @@ namespace RockAndHardPlace
             Apply(pose);
             if (elapsed >= RunStart)
             {
-                int step = Mathf.FloorToInt(pose.Stride / Mathf.PI);
+                int step = Mathf.FloorToInt((pose.Stride + Mathf.PI * 0.5f) / Mathf.PI);
                 if (step != lastStep)
                 {
                     lastStep = step;
-                    var foot = step % 2 == 0 ? frontLeg : backLeg;
+                    var foot = step % 2 == 1 ? frontLeg : backLeg;
                     Footstep?.Invoke(foot != null ? foot.position - Vector3.up : transform.position);
+                    GameAudio.Play(SoundCue.Footstep, 0.75f);
                 }
             }
             if (elapsed < Duration) return;

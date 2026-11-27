@@ -73,6 +73,7 @@ namespace RockAndHardPlace
             activeShell = shell;
             shell.Resolved += OnShotResolved;
             onShotFired.Invoke(CurrentTurret);
+            GameAudio.Play(SoundCue.Cannon);
             return true;
         }
 
@@ -82,6 +83,7 @@ namespace RockAndHardPlace
             var turret = CurrentTurret;
             if (turret.Weapon == null || !turret.Bank.TryBuyUpgrade(turret.Weapon.UpgradeCost)) return false;
             LastEvent = turret.DisplayName + " bought the upgrade: damage is now " + turret.Damage + ".";
+            GameAudio.Play(SoundCue.Upgrade);
             return true;
         }
 
@@ -92,7 +94,7 @@ namespace RockAndHardPlace
         {
             if (Phase != GamePhase.MountainLeaving) return;
             SetPhase(GamePhase.Combat);
-            LastEvent = "Mountain cleared. Direct hits now damage tanks.";
+            LastEvent = "Mountain cleared. Direct hits now damage kingdoms.";
             NextTurn();
         }
 
@@ -106,6 +108,7 @@ namespace RockAndHardPlace
             if (Phase == GamePhase.Mining && mountain.Owns(hit))
             {
                 int mined = mountain.Mine(shooter.Bank);
+                if (mined > 0) GameAudio.Play(SoundCue.StoneHit);
 
                 string lootMessage = "";
                 if (mined > 0 && lootManager != null)
@@ -130,6 +133,7 @@ namespace RockAndHardPlace
                 {
                     int damage = shooter.Damage;
                     target.Health.TakeDamage(damage);
+                    GameAudio.Play(SoundCue.KingdomHit);
                     LastEvent = shooter.DisplayName + " hit " + target.DisplayName + " for " + damage + ".";
                     if (target.Health.IsDead)
                     {
@@ -137,7 +141,9 @@ namespace RockAndHardPlace
                         return;
                     }
                 }
+                else GameAudio.Play(SoundCue.StoneHit, 0.45f);
             }
+            else if (hit != null) GameAudio.Play(SoundCue.StoneHit, 0.45f);
             NextTurn();
         }
 
@@ -153,6 +159,7 @@ namespace RockAndHardPlace
             SetPhase(GamePhase.GameOver);
             LastEvent = winner.DisplayName + " wins! Press Restart to play again.";
             onGameOver.Invoke(winner);
+            GameAudio.Play(SoundCue.Victory);
         }
 
         private void SetPhase(GamePhase phase)

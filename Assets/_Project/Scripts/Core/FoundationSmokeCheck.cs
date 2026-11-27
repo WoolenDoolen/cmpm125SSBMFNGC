@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEBUG
 using System;
 using System.Collections;
 using System.IO;
@@ -27,6 +27,7 @@ namespace RockAndHardPlace
         {
             DontDestroyOnLoad(gameObject);
             Directory.CreateDirectory(Output);
+            File.WriteAllText(Path.Combine(Output, "result.txt"), "FOUNDATION CHECK RUNNING");
             deadline = Time.realtimeSinceStartup + 90;
             yield return null;
             yield return new WaitForFixedUpdate();
@@ -122,6 +123,21 @@ namespace RockAndHardPlace
             var previous = camera.targetTexture;
             var active = RenderTexture.active;
             camera.targetTexture = target;
+            // Overlay canvases normally bypass Camera.Render. Temporarily route them through
+            // the same camera so the review captures the real HUD and reward layout as well.
+            var canvases = FindObjectsByType<Canvas>();
+            var overlay = new System.Collections.Generic.List<(Canvas canvas, bool sorting, int order)>();
+            foreach (var canvas in canvases)
+            {
+                if (canvas.renderMode != RenderMode.ScreenSpaceOverlay) continue;
+                overlay.Add((canvas, canvas.overrideSorting, canvas.sortingOrder));
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = camera;
+                canvas.planeDistance = 1;
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = short.MaxValue;
+            }
+            Canvas.ForceUpdateCanvases();
             camera.Render();
             RenderTexture.active = target;
             var image = new Texture2D(1600, 900, TextureFormat.RGB24, false);
@@ -130,6 +146,14 @@ namespace RockAndHardPlace
             File.WriteAllBytes(Path.Combine(Output, name + ".png"), image.EncodeToPNG());
             camera.targetTexture = previous;
             RenderTexture.active = active;
+            foreach (var saved in overlay)
+            {
+                var canvas = saved.canvas;
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.worldCamera = null;
+                canvas.overrideSorting = saved.sorting;
+                canvas.sortingOrder = saved.order;
+            }
             Destroy(image);
             Destroy(target);
         }
