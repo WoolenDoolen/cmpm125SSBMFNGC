@@ -13,33 +13,57 @@ public class LootManager : MonoBehaviour
         BonusOre
     }
     [Header("Reward Settings")]
-    [SerializeField, Min(1)] private int healthAmount = 25;
-    [SerializeField, Min(1)] private int armorAmount = 20;
-    [SerializeField, Min(1)] private int damageAmount = 5;
-    [SerializeField, Min(1)] private Vector2Int bonusOreRange = new Vector2Int(10, 30);
+    [SerializeField] private int healthAmount = 25;
+    [SerializeField] private int armorAmount = 20;
+    [SerializeField] private int damageAmount = 5;
+    [SerializeField] private Vector2Int bonusOreRange = new Vector2Int(10, 30);
+
+    [Header("Reward Icons")]
+    [SerializeField] private Sprite healthIcon;
+    [SerializeField] private Sprite armorIcon;
+    [SerializeField] private Sprite weaponUpgradeIcon;
+    [SerializeField] private Sprite bonusOreIcon;
+
+    [Header("Reward Pop Up UI")]
+    [SerializeField] private RewardPopUpUI rewardPopUpUI;
 
     public string AwardLoot(Turret player)
     {
         if(player == null) return "";
         LootType reward = (LootType)Random.Range(0,4);
+        string message = "";
+        Sprite icon = null;
         switch (reward)
         {
             case LootType.HealthPotion:
                 player.Health.Heal(healthAmount);
-                return player.DisplayName + " found health potion! +" + healthAmount + "HP.";
+                message = player.DisplayName + " found health potion! +" + healthAmount + "HP.";
+                icon = healthIcon;
+                break;
             case LootType.Armor:
                 player.Health.IncreaseMaxHealth(armorAmount);
-                return player.DisplayName + " found armor! +" + armorAmount + " Armor.";
+                message = player.DisplayName + " found armor! +" + armorAmount + " Armor.";
+                icon = armorIcon;
+                break;
             case LootType.WeaponUpgrade:
                 player.IncreaseDamage(damageAmount);
-                return player.DisplayName + " found a weapon upgrade! +" + damageAmount + " Damage.";
+                message = player.DisplayName + " found a weapon upgrade! +" + damageAmount + " Damage.";
+                icon = weaponUpgradeIcon;
+                break;
             case LootType.BonusOre:
                 int oreAmount = Random.Range(bonusOreRange.x, bonusOreRange.y + 1);
                 player.Bank.Add(oreAmount);
-                return player.DisplayName + " found bonus ore! +" + oreAmount + " Ore.";
+                message = player.DisplayName + " found bonus ore! +" + oreAmount + " Ore.";
+                icon = bonusOreIcon;
+                break;
             default:
                 return "";
         }
+        if(rewardPopUpUI != null && icon != null && !string.IsNullOrEmpty(message))
+        {
+            rewardPopUpUI.Show(icon, message);
+        }
+        return player.DisplayName + " found " + message;
     }
 }
 }
