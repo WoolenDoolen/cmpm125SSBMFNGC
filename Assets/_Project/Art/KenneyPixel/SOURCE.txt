@@ -1,0 +1,4 @@
+Kenney: Platformer Art Pixel (CC0)
+https://kenney.nl/assets/platformer-art-pixel
+Original 21 x 21 pixel tiles copied without image modification.
+Filename index = row * 30 + column in the original packed atlas.
