@@ -8,13 +8,21 @@ Use **Unity 6000.6.3f1** with the packages pinned in `Packages/manifest.json` (U
 
 | Control | Action |
 | --- | --- |
-| Up / Down | Change barrel angle |
-| Left / Right | Change shot power |
+| W / S or Up / Down | Raise / lower the barrel angle |
+| A / D or Left / Right | Lower / raise shot power |
 | Space | Fire; the turn passes after the shot resolves |
-| U | Spend 20 ore on the existing damage upgrade |
+| U | Open or close the acting castle's upgrade tree |
+| Esc | Pause, resume or go back from a menu |
 | R | Restart the match |
 
-Blue and Red share one keyboard. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat.
+Choose **Play local match** from the title screen. Blue and Red share one keyboard, and a gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact for both players. The setting carries across matches.
+
+Each castle spends its own ore. Every node currently costs 20 ore and can be bought once. Buying a node leaves the shot available that turn.
+
+| Branch | First node | Follow-up |
+| --- | --- | --- |
+| Cannon | Forged Shells gives +10 damage | Heavy Shot gives another +10 damage |
+| Fortification | Reinforced Walls gives +25 max HP | Inner Keep gives another +20 max HP |
 
 For a quick demonstration with the current layout, **55 degrees / roughly 6 power for either side** reaches the mountain. After it leaves, **55 degrees / roughly 11.75 power** reaches the opposing kingdom. These are starting examples; aiming is part of the game.
 
@@ -22,12 +30,12 @@ For a quick demonstration with the current layout, **55 degrees / roughly 6 powe
 
 - The team's scene, houses, terrain, loot and reward popup are merged from `Scene-and-Mountain-Update`. The script work was already merged into `main`.
 - The mountain uses saved, editable Unity Tilemaps made from Kenney's original 21px tiles. Proper slope pieces, a pointed asymmetric outline, shaded rock faces and embedded ore replace the earlier repeated boulder blocks. Ridges, faces and feet are separate maps.
-- Its escape has a wake-up, crouch, rise, forward lean and accelerating alternating steps. Movement starts from its placed position and clears the camera. Colliders switch off on depletion; combat resumes once after the run.
+- On depletion the mountain slowly stands, then sprints into the river valley in about a second. Its shrinking silhouette and quieter footsteps show it receding. Colliders switch off on depletion, and combat resumes when the cutscene ends.
 - Both castles are built entirely from pixel wall, door, window and detail tiles. Flags distinguish the sides, and smaller cannons rotate on the actual aiming pivots. The earlier house images and terrain layout are inactive in Main. Collision follows the new mountain, castle and sloped terrain tiles.
 - A layered valley backdrop includes distant and near mountains, shaded cliff faces, pine trees, a winding river, stepped clouds and a sun. It is original scene geometry with pixel-aligned contours. Foreground soil uses subtle pixel grain and continuous depth shading; the grass cutouts meet the soil without visible tile bands.
 - Seven original sound effects cover firing, stone impacts, kingdom impacts, wake-up, footsteps, upgrades and victory. Adjust `Game Audio` volume on `GameManager` in the Inspector.
-- Health, ore and aim stay in the top-left HUD. Hit results and other event messages appear in the bottom-center banner.
-- A match ends when a kingdom reaches zero health. The HUD announces the winner and R restarts. A dedicated game-over screen remains to be made.
+- The HUD shows health bars on both sides and the current turn and aim in the center. Hit results stay in the bottom banner. Mining hits throw off ore chips and reveal loot, while kingdom hits flash the castle and animate lost health.
+- When a kingdom reaches zero health, the game-over screen shows the winning and defeated sides. Choose Rematch or return to the title screen.
 
 The old mountain animation clip/controller remain as reference assets; the playable mountain uses `MountainEscape`. The original team layout is preserved in `TeamLayout.unity`.
 
@@ -45,9 +53,9 @@ Effects are imported WAV assets in `Assets/_Project/Audio/Sfx`. Regenerate them 
 
 ## Build and verification
 
-Use **Prototype > Build Windows Prototype**. The development build is `Builds/Windows/BetweenARock.exe`; distribute the entire Windows folder, including its Data folder and Unity DLLs. Builds and verification output are ignored by Git.
+Use **Prototype > Build Windows Prototype**. The default build is `Builds/Windows/BetweenARock.exe`. The latest local feedback build is in `Builds/Playtest`. Keep the executable beside its Data folder and Unity DLLs. Builds and verification output are ignored by Git.
 
-The opt-in `-foundationSmokeTest` argument runs real projectiles through mining, an upgrade purchase, the escape, kingdom damage, a win and restart. It also checks animation continuity, forward travel, foot height and the one-turn handoff. It exits with code 0 on success and writes `Logs/FoundationCheck/result.txt` and screenshots. Normal play does not install the check.
+The opt-in `-foundationSmokeTest` argument exercises the menus, WASD, EZ aim, upgrade branches, turn outlines and a full match through rematch. It exits with code 0 on success and writes `Logs/FoundationCheck/result.txt` and screenshots.
 
 For an Editor check, launch Unity with `-batchmode -projectPath "<repository path>" -executeMethod FoundationValidation.Run -foundationSmokeTest -logFile "Logs/foundation-play.log"`. Omit `-quit`: the check exits Unity when finished.
 
@@ -57,22 +65,21 @@ The supplied assignment requires **3-5 minutes**, due **Thursday, December 3, 20
 
 | Time | Focus | Evidence to record |
 | --- | --- | --- |
-| 0:00-0:25 | Hook and premise | Show both kingdoms and the sleeping mountain. Explain the mine, upgrade, then fight loop. Include the start menu once made. |
+| 0:00-0:25 | Hook and premise | Show the start menu, both kingdoms and the sleeping mountain. Explain the mine, upgrade, then fight loop. |
 | 0:25-1:15 | Artillery and local multiplayer | Change angle/power, show a projectile arc, impact and the turn passing to the other kingdom. |
-| 1:15-2:00 | Resource economy | Show ore increasing, a loot popup and buying an upgrade. Explain its effect using the HUD. Show a talent-tree choice here if it is added. |
+| 1:15-2:00 | Resource economy | Show ore sparks and a loot popup, then buy a node in the upgrade tree. Show the change in cannon damage or castle HP. |
 | 2:00-2:40 | Triggered cutscene | Show the final mining hit, wake-up, feet emerging and run. Let the footsteps be heard. Show play resuming after it clears. |
-| 2:40-3:30 | Kingdom combat and feedback | Land hits, show health falling and demonstrate the two chosen core juicy interactions. |
+| 2:40-3:30 | Kingdom combat and feedback | Land a hit and hold on the castle flash and health drain. Show the turn outline switch to the other player. |
 | 3:30-4:00 | Completion and credits | Show a win/lose screen, restart and credits. Finish with a strong gameplay moment if time permits. |
 
 Demonstrate each feature working. The rubric explicitly calls for gameplay, two core juicy interactions, three selected optional features, menus and a win/lose state. Keep results readable even with a trailer-like edit. Submit an MP4 or public/unlisted YouTube link, and stay below five minutes.
 
-## Before the final recording
+## Assignment checklist
 
-1. **Required screens:** make a functioning start screen, credits screen and dedicated win/lose screen. Winner text alone does not demonstrate the full screen requirement.
-2. **Juice next:** the escape and sound foundation are in place. Add readable mining-hit and kingdom-hit feedback, such as ore/health UI response plus impact animation. Large explosion effects are deferred. Decide which two interactions you will demonstrate against the rubric.
-3. **Choose three optional features:** local competitive multiplayer and the triggered mountain cutscene have working demonstrations. Health/damage exists; strengthen its health UI feedback before presenting that as the third feature. WebGL hosted on Itch is another option once built and uploaded. Random loot rolls alone should not be presented as procedural level generation.
-4. **Economy follow-up:** a small ore-funded talent tree could give upgrades more depth. Start with clear cannon-damage versus fortification choices, with visible costs/effects. It is a proposed next step. Extra weapons, wind and army units remain brainstorms.
-5. **Release:** upload a tested build to Itch.io or Game Jolt with its name, screenshot, icon and credits. Verify the imported art packs' creator/license details and credit all teammates. The supplied team requirement calls for each member to contribute both content and code.
+- **Mechanics and completion.** Aim and fire artillery, mine and spend ore on upgrades, then defeat the opposing castle. The start menu, credits and win/lose screen are connected.
+- **Two juicy interactions to show.** Capture the mining hit with its ore chips, sound and loot pop, then a kingdom hit with its impact sound, castle flash and animated health bar.
+- **Three optional features to show.** Use local competitive multiplayer, health and damage with animated UI, and the triggered mountain cutscene that returns control to the players.
+- **Submission.** Upload a tested build to Itch.io or Game Jolt with the game name, screenshot, icon and credits. Confirm the team credit names and each teammate's content and code contributions before submitting.
 
 ## Attribution
 

@@ -36,24 +36,27 @@ public class LootManager : MonoBehaviour
         switch (reward)
         {
             case LootType.HealthPotion:
+                int beforeHeal = player.Health.Current;
                 player.Health.Heal(healthAmount);
-                message = player.DisplayName + " found health potion! +" + healthAmount + "HP.";
+                int restored = player.Health.Current - beforeHeal;
+                message = restored > 0 ? player.DisplayName + " found a potion. +" + restored + " HP." :
+                    player.DisplayName + " found a potion at full HP.";
                 icon = healthIcon;
                 break;
             case LootType.Armor:
                 player.Health.IncreaseMaxHealth(armorAmount);
-                message = player.DisplayName + " found armor! +" + armorAmount + " Armor.";
+                message = player.DisplayName + " found armor. +" + armorAmount + " max HP.";
                 icon = armorIcon;
                 break;
             case LootType.WeaponUpgrade:
                 player.IncreaseDamage(damageAmount);
-                message = player.DisplayName + " found a weapon upgrade! +" + damageAmount + " Damage.";
+                message = player.DisplayName + " found a weapon upgrade. +" + damageAmount + " damage.";
                 icon = weaponUpgradeIcon;
                 break;
             case LootType.BonusOre:
                 int oreAmount = Random.Range(bonusOreRange.x, bonusOreRange.y + 1);
                 player.Bank.Add(oreAmount);
-                message = player.DisplayName + " found bonus ore! +" + oreAmount + " Ore.";
+                message = player.DisplayName + " found bonus ore. +" + oreAmount + " ore.";
                 icon = bonusOreIcon;
                 break;
             default:
@@ -63,7 +66,7 @@ public class LootManager : MonoBehaviour
         {
             rewardPopUpUI.Show(icon, message);
         }
-        return player.DisplayName + " found " + message;
+        return message;
     }
 }
 }

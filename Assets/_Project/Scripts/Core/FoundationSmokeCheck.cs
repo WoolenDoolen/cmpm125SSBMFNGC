@@ -3,7 +3,10 @@ using System;
 using System.Collections;
 using System.IO;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 namespace RockAndHardPlace
 {
@@ -12,6 +15,9 @@ namespace RockAndHardPlace
     public sealed class FoundationSmokeCheck : MonoBehaviour
     {
         private GameManager game;
+        private ShotTrajectory trajectory;
+        private Keyboard keyboard;
+        private static Action cleanup;
         private int steps;
         private float deadline;
         private static string Output => Path.Combine(Directory.GetCurrentDirectory(), "Logs", "FoundationCheck");
@@ -32,13 +38,67 @@ namespace RockAndHardPlace
             yield return null;
             yield return new WaitForFixedUpdate();
             game = FindAnyObjectByType<GameManager>();
-            Check(game != null && game.Phase == GamePhase.Mining, "The match starts in Mining.");
+            Check(game != null && game.Phase == GamePhase.Title && !game.TryFire(), "The title screen blocks gameplay.");
+            bool savedEasyMode = game.EasyMode;
+            var backgroundBehavior = InputSystem.settings.backgroundBehavior;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+#if UNITY_EDITOR
+            var editorInputBehavior = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.editorInputBehaviorInPlayMode =
+                InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+#endif
+            keyboard = InputSystem.AddDevice<Keyboard>();
+            cleanup = () =>
+            {
+                if (game != null && game.EasyMode != savedEasyMode) game.SetEasyMode(savedEasyMode);
+                InputSystem.RemoveDevice(keyboard);
+                InputSystem.settings.backgroundBehavior = backgroundBehavior;
+#if UNITY_EDITOR
+                InputSystem.settings.editorInputBehaviorInPlayMode = editorInputBehavior;
+#endif
+            };
+            yield return Capture("00-title");
+            Click("How to Play");
+            Check(GameObject.Find("Upgrade guide heading") != null, "How to Play explains the upgrades.");
+            yield return Capture("00-how-to-play");
+            Click("Back");
+            Click("Credits");
+            Check(GameObject.Find("Project team") != null, "Credits opens from the start screen.");
+            Click("Back");
+            Click("Options");
+            Click("EZ Mode Toggle");
+            Check(game.EasyMode != savedEasyMode, "The EZ option toggles.");
+            if (!game.EasyMode) Click("EZ Mode Toggle");
+            yield return Capture("00-options");
+            Click("Back");
+            Click("Play local match");
+            Check(game.Phase == GamePhase.Mining, "Play starts the mining phase.");
+            trajectory = new ShotTrajectory();
+            yield return CheckKeyboard();
+
+            yield return Tap(Key.Escape);
+            Check(game.IsPaused && !game.TryFire(), "Escape opens Pause and blocks firing.");
+            Click("Options");
+            Click("EZ Mode Toggle");
+            Check(!game.EasyMode && game.IsPaused, "Options accessed from Pause keeps the game paused.");
+            Click("Back");
+            Click("Resume");
+            yield return null;
+            Check(!game.IsPaused && !Line("EZ trajectory").enabled, "EZ off hides the arc when the match resumes.");
+            yield return Tap(Key.Escape);
+            Click("Options");
+            Click("EZ Mode Toggle");
+            Click("Back");
+            Click("Resume");
+            yield return null;
             var mountain = game.Mountain;
             var escape = mountain.GetComponent<MountainEscape>();
             Check(escape != null && mountain.GetComponentInChildren<TilemapCollider2D>() != null,
                 "The tilemap mountain has its escape controller and collision.");
             CheckPoseContinuity();
             escape.Footstep += CountStep;
+            Check(Line("Blue turn outline").enabled && !Line("Red turn outline").enabled, "Only Blue is outlined at the start.");
+            Check(Line("EZ trajectory").enabled && Line("Predicted impact").enabled, "EZ renders the arc and impact.");
             yield return Capture("01-mining");
 
             int miningTurns = Mathf.CeilToInt((float)mountain.StartingOre / mountain.OrePerHit);
@@ -48,15 +108,39 @@ namespace RockAndHardPlace
                 var shooter = game.CurrentTurret;
                 if (hit == 2)
                 {
-                    Check(game.TryBuyUpgrade(), "Mined ore buys an upgrade through GameManager.");
-                    int ore = shooter.Bank.Ore;
-                    Check(!game.TryBuyUpgrade() && shooter.Bank.Ore == ore, "Repeat upgrades do not spend ore.");
+                    yield return Tap(Key.U);
+                    int beforePurchase = shooter.Bank.Ore;
+                    int damage = shooter.Damage;
+                    Check(!Control("Heavy Shot").interactable && !game.TryBuyUpgrade(UpgradeId.HeavyShot) &&
+                        shooter.Bank.Ore == beforePurchase, "The second cannon upgrade needs its first node.");
+                    yield return Capture("01-upgrades");
+                    Click("Forged Shells");
+                    Check(shooter.Bank.HasUpgrade(UpgradeId.ForgedShells) && shooter.Damage ==
+                        damage + shooter.Weapon.UpgradedDamage - shooter.Weapon.Damage, "Forged Shells increases damage.");
+                    Check(!Control("Forged Shells").interactable, "A purchased upgrade cannot be bought again.");
+                    Click("Back to aiming");
+                }
+                if (hit == 3)
+                {
+                    yield return Tap(Key.U);
+                    int health = shooter.Health.Current;
+                    int max = shooter.Health.Max;
+                    Click("Reinforced Walls");
+                    int bonus = CastleUpgrades.Get(UpgradeId.ReinforcedWalls).HealthBonus;
+                    Check(shooter.Health.Current == health + bonus && shooter.Health.Max == max + bonus,
+                        "Reinforced Walls adds current and maximum HP.");
+                    Check(!shooter.Bank.HasUpgrade(UpgradeId.ForgedShells), "Purchases are unique to the acting castle.");
+                    Click("Back to aiming");
                 }
                 Check(FindShot(mountain.Owns), "A ballistic shot can reach the mountain.");
                 Check(game.TryFire(), "The current kingdom fires.");
                 Check(!game.TryFire(), "A second shot is blocked while a shell is in flight.");
+                yield return null;
+                Check(!Line("EZ trajectory").enabled, "The EZ arc disappears while a shell is in flight.");
                 yield return WaitForShot();
                 Check(mountain.OreRemaining == Mathf.Max(0, before - mountain.OrePerHit), "A real projectile mines exactly one reward.");
+                if (hit == 0)
+                    Check(Line("Red turn outline").enabled && !Line("Blue turn outline").enabled, "The outline passes to Red.");
             }
             Check(game.Phase == GamePhase.MountainLeaving, "Depletion starts the escape phase.");
             Check(!game.TryFire() && !game.TryBuyUpgrade(), "Combat and purchases pause during the escape.");
@@ -82,6 +166,12 @@ namespace RockAndHardPlace
             Check(game.CurrentIndex == (lastShooter + 1) % game.Turrets.Count && steps >= 6,
                 "The run has alternating footfalls and passes exactly one turn.");
             yield return Capture("05-combat");
+            var upgraded = game.CurrentTurret;
+            int baseDamage = upgraded.Damage;
+            yield return Tap(Key.U);
+            Click("Heavy Shot");
+            Check(upgraded.Damage == baseDamage + CastleUpgrades.HeavyShotDamage, "An unlocked second tier applies its damage bonus.");
+            Click("Back to aiming");
 
             for (int shot = 0; game.Phase != GamePhase.GameOver && shot < 20; shot++)
             {
@@ -91,18 +181,77 @@ namespace RockAndHardPlace
                 Check(game.TryFire(), "Combat accepts the next shot.");
                 yield return WaitForShot();
                 Check(target.Health.Current < health, "A real kingdom impact reduces health. " + game.LastEvent);
+                if (shot == 0) yield return Capture("05-damage");
             }
             Check(game.Phase == GamePhase.GameOver && game.Winner != null && !game.TryFire(),
                 "A destroyed kingdom ends the match and stops firing.");
             yield return Capture("06-game-over");
             var oldGame = game;
-            game.Restart();
+            Click("Rematch");
             yield return null;
             yield return null;
             game = FindAnyObjectByType<GameManager>();
-            Check(game != null && game != oldGame && game.Phase == GamePhase.Mining && !game.Mountain.HasLeft,
-                "Restart creates a fresh mining match.");
-            Finish(0, "FOUNDATION CHECK PASSED: mining, upgrade, tile collisions, escape, footsteps, combat, win, restart.");
+            Check(game != null && game != oldGame && game.Phase == GamePhase.Mining && !game.Mountain.HasLeft && game.EasyMode &&
+                game.Turrets[0].Bank.Ore == 0 && !game.Turrets[0].Bank.Upgraded,
+                "Rematch resets the battlefield and upgrades while keeping the EZ setting.");
+            yield return Tap(Key.Escape);
+            Click("Main Menu");
+            yield return null;
+            yield return null;
+            game = FindAnyObjectByType<GameManager>();
+            Check(game != null && game.Phase == GamePhase.Title, "Main Menu returns to the title screen.");
+            Finish(0, "FOUNDATION CHECK PASSED: menus, WASD, EZ arc, both upgrade branches, castle turns, mining, sprint, combat, win, rematch.");
+        }
+
+        private IEnumerator CheckKeyboard()
+        {
+            var turret = game.CurrentTurret;
+            float angle = turret.Angle;
+            float power = turret.Power;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W, Key.D));
+            yield return null;
+            yield return null;
+            Check(turret.Angle > angle && turret.Power > power,
+                $"W raises aim and D raises power. Aim {turret.Angle}, power {turret.Power}, W pressed {keyboard.wKey.isPressed}.");
+            angle = turret.Angle;
+            power = turret.Power;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S, Key.A));
+            yield return null;
+            yield return null;
+            Check(turret.Angle < angle && turret.Power < power, "S lowers aim and A lowers power.");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return null;
+            turret.SetAim(40, 8);
+        }
+
+        private IEnumerator Tap(Key key)
+        {
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
+            yield return null;
+            yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return null;
+        }
+
+        private static Button Control(string name)
+        {
+            var widget = GameObject.Find(name);
+            Check(widget != null && widget.GetComponent<Button>() != null, "Expected visible button " + name + ".");
+            return widget.GetComponent<Button>();
+        }
+
+        private static void Click(string name)
+        {
+            var button = Control(name);
+            Check(button.interactable, name + " should be usable.");
+            button.onClick.Invoke();
+        }
+
+        private static LineRenderer Line(string name)
+        {
+            var item = GameObject.Find(name);
+            Check(item != null && item.GetComponent<LineRenderer>() != null, "Expected renderer " + name + ".");
+            return item.GetComponent<LineRenderer>();
         }
 
         private void Update()
@@ -168,39 +317,12 @@ namespace RockAndHardPlace
         private bool FindShot(Func<Collider2D, bool> target)
         {
             var turret = game.CurrentTurret;
-            float gravity = Physics2D.gravity.y * turret.Weapon.ShellPrefab.GetComponent<Rigidbody2D>().gravityScale;
             for (float angle = 55; angle <= 80; angle += 5)
             for (float power = 6; power <= 20; power += 0.25f)
             {
                 turret.SetAim(angle, power);
-                // AimDirection * the known barrel length gives the exact muzzle from its pivot.
-                var settings = turret.GetComponentsInChildren<Transform>();
-                Transform muzzle = null;
-                foreach (var part in settings) if (part.name == "Muzzle") muzzle = part;
-                if (muzzle == null) throw new Exception("Turret needs its named Muzzle for this check.");
-                Vector2 start = muzzle.position;
-                Vector2 velocity = turret.AimDirection * turret.Power;
-                Vector2 previous = start;
-                bool blocked = false;
-                float dt = Time.fixedDeltaTime;
-                for (float t = dt; t <= 6 && !blocked; t += dt)
-                {
-                    velocity += Vector2.up * (gravity * dt);
-                    Vector2 next = previous + velocity * dt;
-                    Vector2 segment = next - previous;
-                    foreach (var hit in Physics2D.CircleCastAll(previous, 0.13f, segment.normalized, segment.magnitude))
-                    {
-                        if (hit.collider.isTrigger || hit.collider.transform.IsChildOf(turret.transform)) continue;
-                        if (target(hit.collider) && segment.y < 0 && hit.normal.y > 0.5f)
-                        {
-                            Debug.Log("FOUNDATION SHOT " + turret.DisplayName + " angle " + angle + " power " + power);
-                            return true;
-                        }
-                        blocked = true;
-                        break;
-                    }
-                    previous = next;
-                }
+                var hit = trajectory.Trace(turret);
+                if (hit.collider != null && hit.normal.y > 0.5f && target(hit.collider)) return true;
             }
             return false;
         }
@@ -231,6 +353,8 @@ namespace RockAndHardPlace
 
         private static void Finish(int code, string message)
         {
+            cleanup?.Invoke();
+            cleanup = null;
             Directory.CreateDirectory(Output);
             File.WriteAllText(Path.Combine(Output, "result.txt"), message);
             Debug.Log(message);

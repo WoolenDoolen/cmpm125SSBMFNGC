@@ -14,10 +14,12 @@ namespace RockAndHardPlace
         [SerializeField] private InputActionReference fire;
         [SerializeField] private InputActionReference upgrade;
         [SerializeField] private InputActionReference restart;
+        private MatchMenu matchMenu;
 
         private void Awake()
         {
             if (gameManager == null) gameManager = GetComponent<GameManager>();
+            matchMenu = FindAnyObjectByType<MatchMenu>();
         }
 
         private void OnEnable() => SetActionsEnabled(true);
@@ -25,12 +27,24 @@ namespace RockAndHardPlace
 
         private void Update()
         {
-            if (gameManager == null) return;
-            if (WasPressed(restart))
+            if (gameManager == null || !gameManager.AcceptsKeyboard) return;
+            if (matchMenu != null && Keyboard.current?.escapeKey.wasPressedThisFrame == true)
+            {
+                matchMenu.HandleEscape();
+                return;
+            }
+            if (WasPressed(restart) && gameManager.Phase != GamePhase.Title &&
+                (matchMenu == null || matchMenu.AllowsRestart))
             {
                 gameManager.Restart();
                 return;
             }
+            if (matchMenu != null && WasPressed(upgrade))
+            {
+                matchMenu.ToggleUpgrades();
+                return;
+            }
+            if (matchMenu != null && matchMenu.IsOpen) return;
             gameManager.Aim(Read(aim), Read(power));
             if (WasPressed(upgrade)) gameManager.TryBuyUpgrade();
             if (WasPressed(fire)) gameManager.TryFire();

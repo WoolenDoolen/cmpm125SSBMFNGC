@@ -18,11 +18,15 @@ public static class PrototypeBuild
         EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         if (UnityEngine.Object.FindAnyObjectByType<GameManager>() == null)
             throw new Exception("Main.unity needs a GameManager.");
-        Directory.CreateDirectory("Builds/Windows");
+        string path = "Builds/Windows/BetweenARock.exe";
+        string[] args = Environment.GetCommandLineArgs();
+        int outputArg = Array.IndexOf(args, "-rockBuildOutput");
+        if (outputArg >= 0 && outputArg + 1 < args.Length) path = args[outputArg + 1];
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = new[] { ScenePath },
-            locationPathName = "Builds/Windows/BetweenARock.exe",
+            locationPathName = path,
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.Development
         });

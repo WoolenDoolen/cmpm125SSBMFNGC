@@ -431,6 +431,58 @@ public static class FinalProjectArt
         PrototypeBuild.BuildWindows();
     }
 
+    // Updates just the affected scene objects. The terrain and other authored art stay in place.
+    public static void ApplyMatchFeedback()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        foreach (var turret in Object.FindObjectsByType<Turret>())
+        {
+            var windows = turret.transform.Find("Kingdom Tilemaps/Doors and Windows");
+            if (windows == null) throw new Exception("Missing window tilemap on " + turret.DisplayName + ".");
+            ConfigureCenterWindow(windows.GetComponent<Tilemap>());
+        }
+        var hud = Object.FindAnyObjectByType<Hud>();
+        var game = Object.FindAnyObjectByType<GameManager>();
+        if (hud == null || game == null) throw new Exception("Main needs a HUD and GameManager.");
+        if (!hud.TryGetComponent<MatchMenu>(out _)) hud.gameObject.AddComponent<MatchMenu>();
+        ConfigureLootPopup(hud);
+        var settings = new SerializedObject(game);
+        settings.FindProperty("startFromMenu").boolValue = true;
+        settings.ApplyModifiedPropertiesWithoutUndo();
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("MATCH MENUS CONNECTED AND CASTLE WINDOWS REPAIRED");
+    }
+
+    private static void ConfigureLootPopup(Hud hud)
+    {
+        var reward = hud.GetComponentInChildren<RewardPopUpUI>();
+        if (reward == null) return;
+        var banner = (RectTransform)reward.transform;
+        banner.anchorMin = banner.anchorMax = new Vector2(0.5f, 0);
+        banner.anchoredPosition = new Vector2(0, 128);
+        banner.sizeDelta = new Vector2(426, 68);
+        var panel = banner.GetComponent<Image>();
+        panel.color = new Color32(22, 32, 39, 237);
+        panel.raycastTarget = false;
+        reward.GetComponent<CanvasGroup>().blocksRaycasts = false;
+
+        var icon = banner.Find("RewardIcon").GetComponent<RectTransform>();
+        icon.anchorMin = icon.anchorMax = new Vector2(0, 0.5f);
+        icon.anchoredPosition = new Vector2(38, 0);
+        icon.sizeDelta = new Vector2(45, 45);
+        icon.GetComponent<Image>().raycastTarget = false;
+        var text = banner.GetComponentInChildren<TMP_Text>();
+        text.rectTransform.anchorMin = Vector2.zero;
+        text.rectTransform.anchorMax = Vector2.one;
+        text.rectTransform.offsetMin = new Vector2(72, 6);
+        text.rectTransform.offsetMax = new Vector2(-14, -6);
+        text.fontSize = 19;
+        text.color = new Color32(249, 241, 219, 255);
+        text.alignment = TextAlignmentOptions.MidlineLeft;
+        text.raycastTarget = false;
+    }
+
     private static Tile Piece(int column, int row)
     {
         int id = row * 30 + column;
