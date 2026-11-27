@@ -1,0 +1,13 @@
+Package Name: Medieval Buildings Pack
+Package Version: v2024.12.12.a
+Number of Assets: 36
+Description: This pack contains 36 unique medieval buildings assets designed for 2D games. These assets can be used in various game genres, from *** games to *** and *** titles.
+Image Specifications: -
+Image Dimensions: 400x400 pixels
+Color Depth: 32 bits
+Transparency: Supported (Alpha Channel included)
+File Format: PNG
+Average File Size: ~132 KB per image
+Total Package Size: ~4.64 MB
+Usage: These assets are designed for use in 2D environments and are optimized for performance across platforms. Each asset has been carefully crafted with attention to detail to provide a consistent and visually appealing aesthetic for your game projects.
+Key Features: 36 unique medieval buildings designs. High-quality PNG images with transparent backgrounds. Compatible with all Unity versions that support 2D projects
