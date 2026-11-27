@@ -59,7 +59,7 @@ namespace RockAndHardPlace
             escape.Begin();
         }
 
-        // The escape controller calls this only after the mountain has cleared the camera.
+        // The escape controller calls this after the mountain disappears into the valley.
         public void OnLeaveFinished()
         {
             if (HasLeft || !IsDepleted) return;

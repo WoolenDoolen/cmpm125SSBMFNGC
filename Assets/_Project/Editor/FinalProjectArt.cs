@@ -315,11 +315,9 @@ public static class FinalProjectArt
         var windows = Map(root, "Doors and Windows", new Vector3(0, 0, -0.02f), 0.5f, 31);
         Paint(windows, 0, 0, Piece(10, 24), tint);
         Paint(windows, 0, 1, Piece(10, 23), tint);
-        foreach (int x in new[] { -3, 0, 3 })
-        {
-            Paint(windows, x, 3, Piece(11, 25), tint);
-            if (x == 0) Paint(windows, x, 4, Piece(11, 27), tint);
-        }
+        Paint(windows, -3, 3, Piece(11, 25), tint);
+        Paint(windows, 3, 3, Piece(11, 25), tint);
+        ConfigureCenterWindow(windows);
         var detail = Map(root, "Castle Details", new Vector3(0, 0, -0.03f), 1f / 42, 32);
         // Horizontal string courses and a dark footing tie walls together without tiled edge seams.
         var mortar = blue ? Hex("525b6d") : Hex("9f987d");
@@ -346,6 +344,16 @@ public static class FinalProjectArt
         Rect(barrel, 13, -4, 3, 8, Hex("a0906b"));
         Rect(barrel, 44, -5, 4, 10, Hex("a0906b"));
         Rect(barrel, 51, -5, 3, 10, Hex("27343c"));
+    }
+
+    internal static void ConfigureCenterWindow(Tilemap windows)
+    {
+        // The center uses the same complete arch as the sides, one course higher.
+        var oldWindow = new Vector3Int(0, 3);
+        var sideWindow = new Vector3Int(-3, 3);
+        if (!windows.HasTile(sideWindow)) return;
+        windows.SetTile(oldWindow, null);
+        Paint(windows, 0, 4, windows.GetTile(sideWindow), windows.GetColor(sideWindow));
     }
 
     private static void ConfigureCameraAndHud()

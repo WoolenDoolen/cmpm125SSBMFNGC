@@ -64,12 +64,17 @@ namespace RockAndHardPlace
                 Check(!part.enabled, "Depleted mountain colliders switch off immediately.");
             int lastShooter = game.CurrentIndex;
             Vector3 origin = mountain.transform.localPosition;
+            float animationStart = Time.time;
             yield return new WaitForSeconds(0.25f);
             Check(Vector3.Distance(origin, mountain.transform.localPosition) < 0.01f, "The mountain wakes without teleporting.");
             yield return Capture("02-awake");
-            yield return new WaitForSeconds(0.9f);
+            yield return new WaitUntil(() => Time.time >= animationStart + MountainEscape.RiseEnd - 0.09f);
             yield return Capture("03-standing");
-            yield return new WaitForSeconds(0.6f);
+            Check(Vector3.Distance(origin, mountain.transform.localPosition) < 0.02f,
+                "The mountain finishes its slow rise at its starting location.");
+            yield return new WaitUntil(() => Time.time >= animationStart + MountainEscape.RunStart + 0.40f);
+            Check(mountain.transform.localPosition.z > origin.z + 2 && mountain.transform.localScale.x < 0.6f,
+                "The sprint recedes into the valley quickly.");
             yield return Capture("04-running");
             while (game.Phase == GamePhase.MountainLeaving) yield return null;
             Check(game.Phase == GamePhase.Combat && mountain.HasLeft && !mountain.gameObject.activeSelf,
@@ -202,23 +207,19 @@ namespace RockAndHardPlace
 
         private static void CheckPoseContinuity()
         {
+            var destination = new Vector3(2.05f, 4.78f, 10);
             foreach (float boundary in new[] { MountainEscape.WakeDuration,
-                MountainEscape.WakeDuration + MountainEscape.CrouchDuration, MountainEscape.RunStart })
+                MountainEscape.WakeDuration + MountainEscape.CrouchDuration, MountainEscape.RiseEnd, MountainEscape.RunStart })
             {
-                var a = MountainEscape.Sample(boundary - 0.0001f, 24);
-                var b = MountainEscape.Sample(boundary + 0.0001f, 24);
+                var a = MountainEscape.Sample(boundary - 0.0001f, destination);
+                var b = MountainEscape.Sample(boundary + 0.0001f, destination);
                 Check(Vector3.Distance(a.BodyOffset, b.BodyOffset) < 0.01f &&
+                    Vector3.Distance(a.RootOffset, b.RootOffset) < 0.01f &&
                     Vector3.Distance(a.BodyScale, b.BodyScale) < 0.01f, "Escape poses join without a snap.");
             }
-            float previous = 0;
-            for (int i = 0; i <= 500; i++)
-            {
-                var pose = MountainEscape.Sample(i * MountainEscape.Duration / 500, 24);
-                Check(pose.Distance >= previous && pose.FrontFoot.y >= 0 && pose.BackFoot.y >= 0 && pose.BodyScale.y > 0,
-                    "Run travel stays forward, feet stay above ground, and scale stays positive.");
-                previous = pose.Distance;
-            }
-            Check(Mathf.Abs(previous - 24) < 0.01f, "The run covers its complete clearance distance.");
+            var end = MountainEscape.Sample(MountainEscape.Duration, destination);
+            Check(Vector3.Distance(end.RootOffset, destination) < 0.01f && end.FigureScale < 0.04f,
+                "The mountain reaches the river bend at a distant scale.");
         }
 
         private static void Check(bool condition, string message)
