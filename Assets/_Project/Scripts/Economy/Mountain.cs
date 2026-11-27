@@ -3,7 +3,7 @@ using UnityEngine.Events;
 
 namespace RockAndHardPlace
 {
-    [RequireComponent(typeof(Animator))]
+    [RequireComponent(typeof(MountainEscape))]
     public sealed class Mountain : MonoBehaviour
     {
         [Header("Ore")]
@@ -13,10 +13,8 @@ namespace RockAndHardPlace
         [SerializeField, Min(1)] private int orePerHit = 20;
 
         [Header("Leaving")]
-        [Tooltip("Plays the leave animation. Defaults to the Animator on this object.")]
-        [SerializeField] private Animator animator;
-        [Tooltip("Animator trigger parameter that starts the leave animation.")]
-        [SerializeField] private string leaveTrigger = "Leave";
+        [Tooltip("Wakes up and runs away relative to the mountain's placed position.")]
+        [SerializeField] private MountainEscape escape;
 
         [Header("Events")]
         [Tooltip("Called after each successful hit. Passes the ore remaining.")]
@@ -35,7 +33,7 @@ namespace RockAndHardPlace
         private void Awake()
         {
             OreRemaining = startingOre;
-            if (animator == null) animator = GetComponent<Animator>();
+            if (escape == null) escape = GetComponent<MountainEscape>();
         }
 
         // True if the collider belongs to this mountain or one of its children.
@@ -58,13 +56,13 @@ namespace RockAndHardPlace
             foreach (var part in GetComponentsInChildren<Collider2D>())
                 part.enabled = false;
             onDepleted.Invoke();
-            animator.SetTrigger(leaveTrigger);
+            escape.Begin();
         }
 
-        // Called by the Animation Event on the last frame of the leave clip.
+        // The escape controller calls this only after the mountain has cleared the camera.
         public void OnLeaveFinished()
         {
-            if (HasLeft) return;
+            if (HasLeft || !IsDepleted) return;
             HasLeft = true;
             onLeft.Invoke();
             gameObject.SetActive(false);
