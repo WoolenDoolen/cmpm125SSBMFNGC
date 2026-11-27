@@ -7150,6 +7150,8 @@ GameObject:
   - component: {fileID: 1053908001}
   - component: {fileID: 1053908002}
   - component: {fileID: 1053908003}
+  - component: {fileID: 1053908005}
+  - component: {fileID: 1053908004}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -7233,6 +7235,123 @@ MonoBehaviour:
   fire: {fileID: 5138656090325895128, guid: 0c5482d341fd60745b2258cf742bfec4, type: 3}
   upgrade: {fileID: -7032698584741927077, guid: 0c5482d341fd60745b2258cf742bfec4, type: 3}
   restart: {fileID: -5905287951575046748, guid: 0c5482d341fd60745b2258cf742bfec4, type: 3}
+--- !u!114 &1053908004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1053907999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97a472bdef32e384a9ede9012c1be77a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RockAndHardPlace.GameAudio
+  cannon: {fileID: 8300000, guid: 23f816673f0370a4da6585ef4d99fd88, type: 3}
+  stoneHit: {fileID: 8300000, guid: 0d8b676583386c44080927f69e6e42b9, type: 3}
+  kingdomHit: {fileID: 8300000, guid: 46f2930f007417140b9f779307aa42b3, type: 3}
+  footstep: {fileID: 8300000, guid: 06aa7c3f0b2f4a64688199acf95b9120, type: 3}
+  mountainWake: {fileID: 8300000, guid: 05f24b8aa9d6ffe47b6757132f94356d, type: 3}
+  upgrade: {fileID: 8300000, guid: d706066bcd111ed4fb93f39787ce0846, type: 3}
+  victory: {fileID: 8300000, guid: 66ff2a32eddcebc43b5a05324786a99c, type: 3}
+  volume: 0.65
+--- !u!82 &1053908005
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1053907999}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1067025809
 GameObject:
   m_ObjectHideFlags: 0
