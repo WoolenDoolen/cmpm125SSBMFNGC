@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 // Authored tile compositions. Source tiles are Kenney's unmodified CC0 pixel art.
@@ -353,15 +354,73 @@ public static class FinalProjectArt
         camera.backgroundColor = Hex("a4c4d3");
         camera.orthographicSize = 6.3f;
         camera.transform.position = new Vector3(0, 0.55f, -10);
+        ConfigureHudLayout();
+    }
+
+    private static void ConfigureHudLayout()
+    {
         var hud = Object.FindAnyObjectByType<Hud>();
         if (hud == null) return;
         var serialized = new SerializedObject(hud);
         var status = (TMP_Text)serialized.FindProperty("statusText").objectReferenceValue;
         var events = (TMP_Text)serialized.FindProperty("eventText").objectReferenceValue;
         if (status != null) { status.fontSize = 19; status.textWrappingMode = TextWrappingModes.NoWrap; }
-        if (events != null) events.fontSize = 17;
         var panel = GameObject.Find("HudPanel");
         if (panel != null) panel.GetComponent<RectTransform>().sizeDelta = new Vector2(550, 0);
+        if (events == null) return;
+
+        // Keep transient hit/mining messages over the bottom soil, outside the aiming lane.
+        // Reuse the same event text so every GameManager message follows this layout.
+        var canvas = hud.GetComponent<Canvas>();
+        var banner = canvas.transform.Find("Combat Event Banner") as RectTransform;
+        if (banner == null)
+        {
+            var go = new GameObject("Combat Event Banner", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            go.layer = canvas.gameObject.layer;
+            banner = go.GetComponent<RectTransform>();
+            banner.SetParent(canvas.transform, false);
+        }
+        banner.anchorMin = new Vector2(0.15f, 0);
+        banner.anchorMax = new Vector2(0.85f, 0);
+        banner.pivot = new Vector2(0.5f, 0);
+        banner.anchoredPosition = new Vector2(0, 20);
+        banner.sizeDelta = new Vector2(0, 64);
+        banner.SetAsLastSibling();
+        var background = banner.GetComponent<Image>();
+        var statusBackground = panel != null ? panel.GetComponent<Image>() : null;
+        background.sprite = statusBackground != null ? statusBackground.sprite : null;
+        background.type = statusBackground != null ? statusBackground.type : Image.Type.Simple;
+        background.color = new Color(0, 0, 0, 0.63f);
+        background.raycastTarget = false;
+
+        var textRect = events.rectTransform;
+        textRect.SetParent(banner, false);
+        textRect.localScale = Vector3.one;
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(18, 8);
+        textRect.offsetMax = new Vector2(-18, -8);
+        events.fontSize = 17;
+        events.alignment = TextAlignmentOptions.MidlineLeft;
+        events.textWrappingMode = TextWrappingModes.Normal;
+        events.raycastTarget = false;
+    }
+
+    [MenuItem("Prototype/Move Combat Messages to Bottom")]
+    public static void MoveCombatMessagesToBottom()
+    {
+        if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        ConfigureHudLayout();
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("COMBAT MESSAGES MOVED TO BOTTOM BANNER");
+    }
+
+    public static void MoveCombatMessagesAndBuild()
+    {
+        MoveCombatMessagesToBottom();
+        PrototypeBuild.BuildWindows();
     }
 
     private static Tile Piece(int column, int row)

@@ -26,6 +26,7 @@ For a quick demonstration with the current layout, **55 degrees / roughly 6 powe
 - Both castles are built entirely from pixel wall, door, window and detail tiles. Flags distinguish the sides, and smaller cannons rotate on the actual aiming pivots. The earlier house images and terrain layout are inactive in Main. Collision follows the new mountain, castle and sloped terrain tiles.
 - A layered valley backdrop includes distant and near mountains, shaded cliff faces, pine trees, a winding river, stepped clouds and a sun. It is original scene geometry with pixel-aligned contours. Foreground soil uses subtle pixel grain and continuous depth shading; the grass cutouts meet the soil without visible tile bands.
 - Seven original sound effects cover firing, stone impacts, kingdom impacts, wake-up, footsteps, upgrades and victory. Adjust `Game Audio` volume on `GameManager` in the Inspector.
+- Health, ore and aim stay in the top-left HUD. Hit results and other event messages appear in the bottom-center banner.
 - A match ends when a kingdom reaches zero health. The HUD announces the winner and R restarts. A dedicated game-over screen remains to be made.
 
 The old mountain animation clip/controller remain as reference assets; the playable mountain uses `MountainEscape`. The original team layout is preserved in `TeamLayout.unity`.
