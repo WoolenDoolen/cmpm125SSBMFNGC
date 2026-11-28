@@ -57,6 +57,13 @@ namespace RockAndHardPlace
                 InputSystem.settings.editorInputBehaviorInPlayMode = editorInputBehavior;
 #endif
             };
+            Canvas.ForceUpdateCanvases();
+            var title = (RectTransform)Control("Single Player").transform.parent;
+            var menu = (RectTransform)title.parent;
+            Vector3 titleCenter = menu.InverseTransformPoint(title.TransformPoint(title.rect.center));
+            Check(Vector2.Distance(titleCenter, menu.rect.center) < 0.5f,
+                $"The title panel is centered at {Screen.width}x{Screen.height}.");
+            Debug.Log($"TITLE LAYOUT CHECK PASSED at {Screen.width}x{Screen.height}.");
             yield return Capture("00-title");
             Click("How to Play");
             Check(GameObject.Find("Upgrade guide heading") != null, "How to Play explains the upgrades.");

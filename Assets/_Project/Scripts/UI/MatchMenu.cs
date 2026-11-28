@@ -18,6 +18,7 @@ namespace RockAndHardPlace
         private GameManager game;
         private TMP_FontAsset font;
         private RectTransform overlay;
+        private Image backdrop;
         private TMP_Text optionValue, upgradeTitle, upgradeOre, resultTitle, resultSubtitle;
         private Page current;
         private Page backPage;
@@ -37,7 +38,7 @@ namespace RockAndHardPlace
             font = hud.Font;
             overlay = MatchUi.Child((RectTransform)transform, "Match Menu");
             MatchUi.Stretch(overlay);
-            MatchUi.Fill(overlay, new Color32(12, 24, 30, 159), true);
+            backdrop = MatchUi.Fill(overlay, Color.clear, true);
             BuildTitle();
             BuildPause();
             BuildOptions();
@@ -80,6 +81,7 @@ namespace RockAndHardPlace
             current = next;
             bool open = next != Page.Closed;
             overlay.gameObject.SetActive(open);
+            backdrop.color = new Color32(12, 24, 30, (byte)(next == Page.Title ? 96 : 159));
             foreach (var (page, panel) in panels) panel.gameObject.SetActive(page == next);
             hud.SetMatchVisible(!open);
 
@@ -135,19 +137,15 @@ namespace RockAndHardPlace
 
         private void BuildTitle()
         {
-            var panel = Panel(Page.Title, 660, 632);
-            MatchUi.Anchor(panel, new Vector2(0.29f, 0.5f), Vector2.zero, panel.sizeDelta);
-            panel.pivot = new Vector2(0.5f, 0.5f);
-            Text(panel, "Game title", "Between a Rock\nand a Hard Place", 42, 38, 576, 153, 63,
+            var panel = Panel(Page.Title, 700, 352);
+            Text(panel, "Game title", "Between a Rock\nand a Hard Place", 42, 27, 616, 153, 63,
                 MatchUi.TextColor, TextAlignmentOptions.Center, true);
-            Text(panel, "Mode prompt", "Choose a mode", 42, 195, 576, 43, 25,
-                MatchUi.Muted, TextAlignmentOptions.Center);
             firstButtons[Page.Title] = Button(panel, "Single Player", () => StartMode(MatchMode.SinglePlayer),
-                114, 252, 432, 66, true);
-            Button(panel, "2 Player", () => StartMode(MatchMode.TwoPlayer), 114, 330, 432, 66);
-            Button(panel, "How to Play", () => OpenFrom(Page.Help), 114, 410, 432);
-            Button(panel, "Options", () => OpenFrom(Page.Options), 114, 478, 432);
-            Button(panel, "Credits", () => OpenFrom(Page.Credits), 114, 546, 432);
+                42, 190, 300, 66, true);
+            Button(panel, "2 Player", () => StartMode(MatchMode.TwoPlayer), 358, 190, 300, 66);
+            Button(panel, "How to Play", () => OpenFrom(Page.Help), 42, 272, 196);
+            Button(panel, "Options", () => OpenFrom(Page.Options), 252, 272, 196);
+            Button(panel, "Credits", () => OpenFrom(Page.Credits), 462, 272, 196);
         }
 
         private void StartMode(MatchMode mode)
