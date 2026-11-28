@@ -16,11 +16,15 @@ namespace RockAndHardPlace
         [Tooltip("The most recent thing that happened.")]
         [SerializeField] private TMP_Text eventText;
 
+        private const string UpgradesLabel = "Upgrades  [U]";
+        private const string UpgradeReadyLabel = "Upgrade ready [U]";
         private readonly StringBuilder builder = new StringBuilder();
         private CastleStatus[] castles;
         private GameObject[] matchWidgets;
         private Graphic[] rewardGraphics;
         private Button upgradesButton;
+        private TMP_Text upgradesButtonLabel;
+        private Color neutralEventColor;
         private bool matchVisible = true;
 
         internal GameManager Game => gameManager;
@@ -32,7 +36,9 @@ namespace RockAndHardPlace
             {
                 Debug.LogError("Hud needs a Game Manager, Status Text and Event Text assigned.", this);
                 enabled = false;
+                return;
             }
+            neutralEventColor = eventText.color;
         }
 
         internal void ConnectMenu(MatchMenu menu)
@@ -48,7 +54,9 @@ namespace RockAndHardPlace
 
             var upgradeRect = MatchUi.Child(canvas, "Open upgrade tree");
             MatchUi.Anchor(upgradeRect, Vector2.zero, new Vector2(20, 20), new Vector2(213, 64));
-            upgradesButton = MatchUi.LabeledButton(upgradeRect, Font, "Upgrades  [U]", menu.ToggleUpgrades, size: 23);
+            upgradesButton = MatchUi.LabeledButton(upgradeRect, Font, UpgradesLabel, menu.ToggleUpgrades, size: 20);
+            upgradesButtonLabel = upgradesButton.GetComponentInChildren<TMP_Text>();
+            upgradesButtonLabel.textWrappingMode = TextWrappingModes.NoWrap;
             var menuRect = MatchUi.Child(canvas, "Open pause menu");
             MatchUi.Anchor(menuRect, Vector2.right, new Vector2(-20, 20), new Vector2(189, 64));
             MatchUi.LabeledButton(menuRect, Font, "Menu  [Esc]", menu.HandleEscape, size: 23);
@@ -112,7 +120,7 @@ namespace RockAndHardPlace
             }
 
             statusText.SetText(builder);
-            eventText.SetText(gameManager.LastEvent);
+            UpdateEventBanner();
         }
 
         private void UpdateMatchDisplay()
@@ -139,11 +147,31 @@ namespace RockAndHardPlace
                 builder.Append("<size=26><b>The mountain is leaving!</b></size>");
             }
             statusText.SetText(builder);
-            eventText.SetText(gameManager.LastEvent);
-            upgradesButton.interactable = gameManager.CanHumanAct;
+            UpdateEventBanner();
+            UpdateUpgradeButton(active);
             foreach (var castle in castles)
                 castle.Refresh(hasTurn && castle.Turret == active, gameManager.IsCpu(castle.Turret),
                     gameManager.HitDamage(castle.Turret));
+        }
+
+        private void UpdateEventBanner()
+        {
+            eventText.SetText(gameManager.LastEvent);
+            var source = gameManager.LastEventSource;
+            eventText.color = source != null ? MatchUi.Team(source) : neutralEventColor;
+        }
+
+        private void UpdateUpgradeButton(Turret active)
+        {
+            bool canAct = gameManager.CanHumanAct;
+            upgradesButton.interactable = canAct;
+            bool ready = canAct && CastleUpgrades.HasAvailableUpgrade(active);
+            string label = ready ? UpgradeReadyLabel : UpgradesLabel;
+            if (upgradesButtonLabel.text == label) return;
+
+            upgradesButtonLabel.text = label;
+            upgradesButtonLabel.color = ready ? MatchUi.Panel : MatchUi.TextColor;
+            MatchUi.SetButtonColors(upgradesButton, ready);
         }
 
         private sealed class CastleStatus
@@ -175,8 +203,9 @@ namespace RockAndHardPlace
                 fill = HealthFill(track, "Remaining health", team);
                 stats = MatchUi.Text(MatchUi.At(card, "Ore and damage", 17, 74, 223, 28),
                     font, "", 21, MatchUi.Muted);
-                keys = MatchUi.Text(MatchUi.At(card, "Aim keys", 246, 74, 72, 28), font, aimKeys, 16, team,
+                keys = MatchUi.Text(MatchUi.At(card, "Aim keys", 230, 74, 88, 28), font, aimKeys, 16, team,
                     TextAlignmentOptions.MidlineRight, true);
+                keys.textWrappingMode = TextWrappingModes.NoWrap;
             }
 
             public void Refresh(bool active, bool cpu, int damage)

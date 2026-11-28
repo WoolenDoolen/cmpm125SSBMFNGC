@@ -45,6 +45,14 @@ namespace RockAndHardPlace
 
         public static CastleUpgrade Get(UpgradeId id) => Nodes[(int)id];
 
+        internal static bool HasAvailableUpgrade(Turret turret)
+        {
+            if (turret.Weapon == null) return false;
+            for (int i = 0; i < Nodes.Count; i++)
+                if (StateFor(Nodes[i], turret) == UpgradeState.Available) return true;
+            return false;
+        }
+
         public static UpgradeState StateFor(CastleUpgrade upgrade, Turret turret)
         {
             if (turret.Bank.HasUpgrade(upgrade.Id)) return UpgradeState.Purchased;

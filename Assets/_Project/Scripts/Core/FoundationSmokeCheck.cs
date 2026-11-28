@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
@@ -106,6 +107,7 @@ namespace RockAndHardPlace
             escape.Footstep += CountStep;
             Check(Line("Blue turn outline").enabled && !Line("Red turn outline").enabled, "Only Blue is outlined at the start.");
             Check(Line("EZ trajectory").enabled && Line("Predicted impact").enabled, "EZ renders the arc and impact.");
+            Check(!UpgradeReminderVisible(), "There is no upgrade reminder before either player earns ore.");
             yield return Capture("01-mining");
 
             int miningTurns = Mathf.CeilToInt((float)mountain.StartingOre / mountain.OrePerHit);
@@ -115,6 +117,11 @@ namespace RockAndHardPlace
                 var shooter = game.CurrentTurret;
                 if (hit == 2)
                 {
+                    Check(UpgradeReminderVisible(), "Blue gets a gold upgrade reminder when it can afford a node.");
+                    var label = Control("Open upgrade tree").GetComponentInChildren<TMP_Text>();
+                    Check(label.preferredWidth <= label.rectTransform.rect.width, "The upgrade reminder fits on one line.");
+                    yield return new WaitForSecondsRealtime(0.12f);
+                    yield return Capture("01-upgrade-reminder");
                     yield return Tap(Key.U);
                     int beforePurchase = shooter.Bank.Ore;
                     int damage = shooter.Damage;
@@ -126,6 +133,9 @@ namespace RockAndHardPlace
                         damage + shooter.Weapon.UpgradedDamage - shooter.Weapon.Damage, "Forged Shells increases damage.");
                     Check(!Control("Forged Shells").interactable, "A purchased upgrade cannot be bought again.");
                     Click("Back to aiming");
+                    yield return null;
+                    Check(UpgradeReminderVisible() == (shooter.Bank.Ore >= CastleUpgrades.Get(UpgradeId.HeavyShot).Cost(shooter.Weapon)),
+                        "The reminder updates after spending ore.");
                 }
                 if (hit == 3)
                 {
@@ -149,6 +159,7 @@ namespace RockAndHardPlace
                 if (hit == 0)
                 {
                     Check(Line("Red turn outline").enabled && !Line("Blue turn outline").enabled, "The outline passes to Red.");
+                    Check(!UpgradeReminderVisible(), "Blue's ore does not show a reminder on Red's turn.");
                     yield return CheckKeyboard(useWasd: false);
                 }
             }
@@ -186,14 +197,20 @@ namespace RockAndHardPlace
             for (int shot = 0; game.Phase != GamePhase.GameOver && shot < 20; shot++)
             {
                 var target = game.Turrets[(game.CurrentIndex + 1) % game.Turrets.Count];
+                var shooter = game.CurrentTurret;
                 int health = target.Health.Current;
-                int damage = game.CurrentTurret.Damage;
+                int damage = shooter.Damage;
                 Check(FindShot(c => c.GetComponentInParent<Turret>() == target), "A ballistic shot reaches the opposing kingdom.");
                 Check(game.TryFire(), "Combat accepts the next shot.");
                 yield return WaitForShot();
                 Check(target.Health.Current == Mathf.Max(0, health - damage),
                     "Local opponents deal full damage on a real kingdom impact. " + game.LastEvent);
-                if (shot == 0) yield return Capture("05-damage");
+                if (shot < 2)
+                {
+                    CheckHitBanner(shooter, target, damage);
+                    yield return new WaitForSecondsRealtime(0.12f);
+                    yield return Capture(shot == 0 ? "05-damage" : "05-red-hit");
+                }
             }
             Check(game.Phase == GamePhase.GameOver && game.Winner != null && !game.TryFire(),
                 "A destroyed kingdom ends the match and stops firing.");
@@ -236,6 +253,7 @@ namespace RockAndHardPlace
                 {
                     Check(!Line("EZ trajectory").enabled && !Control("Open upgrade tree").interactable,
                         "The arc and purchase button are unavailable during the CPU turn.");
+                    Check(!UpgradeReminderVisible(), "There is no upgrade reminder during the CPU turn.");
                     Check(!game.TryFire() && !game.TryBuyUpgrade(), "The player cannot fire or purchase for the CPU.");
                     yield return Capture("07-solo-turn");
                     yield return Tap(Key.Escape);
@@ -266,6 +284,12 @@ namespace RockAndHardPlace
             Check(damage > 0 && damage < cpu.Damage && damage == game.HitDamage(cpu),
                 "The CPU hits Blue for the reduced damage shown in the HUD.");
             Check(3 * damage < health, "Blue can survive three hits at the CPU's opening damage.");
+            var cpuStats = GameObject.Find("Red kingdom status").transform.Find("Ore and damage").GetComponent<TMP_Text>();
+            Check(cpuStats.text.EndsWith("Damage " + damage, StringComparison.Ordinal), "Red's HUD displays its actual damage.");
+            CheckHitBanner(cpu, blue, damage);
+            Check(UpgradeReminderVisible(), "Blue gets the reminder again when its solo turn starts.");
+            yield return new WaitForSecondsRealtime(0.12f);
+            yield return Capture("08-solo-hit-and-reminder");
             yield return Tap(Key.R);
             game = FindAnyObjectByType<GameManager>();
             Check(game != null && game.Mode == MatchMode.SinglePlayer && game.Phase == GamePhase.Mining && game.CanHumanAct,
@@ -321,6 +345,20 @@ namespace RockAndHardPlace
             var button = Control(name);
             Check(button.interactable, name + " should be usable.");
             button.onClick.Invoke();
+        }
+
+        private static bool UpgradeReminderVisible()
+        {
+            var button = Control("Open upgrade tree");
+            return button.interactable && button.colors.normalColor == MatchUi.Gold &&
+                button.GetComponentInChildren<TMP_Text>().text.StartsWith("Upgrade ready", StringComparison.Ordinal);
+        }
+
+        private static void CheckHitBanner(Turret shooter, Turret target, int damage)
+        {
+            var banner = GameObject.Find("EventText").GetComponent<TMP_Text>();
+            Check(banner.text == $"{shooter.DisplayName} hit {target.DisplayName} for {damage}." &&
+                banner.color == MatchUi.Team(shooter), "The hit banner keeps the shooter's color after the turn changes.");
         }
 
         private static LineRenderer Line(string name)

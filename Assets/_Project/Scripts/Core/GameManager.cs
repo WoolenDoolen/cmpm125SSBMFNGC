@@ -48,6 +48,7 @@ namespace RockAndHardPlace
         public bool IsPaused { get; private set; }
         public bool EasyMode { get; private set; }
         public string LastEvent { get; private set; } = "Shoot the mountain to collect ore.";
+        internal Turret LastEventSource { get; private set; }
         public bool HasTurn => Phase == GamePhase.Mining || Phase == GamePhase.Combat;
         public bool CanAct => isActiveAndEnabled && HasTurn && !IsPaused && !ShotActive;
         public bool IsCpuTurn => HasTurn && IsCpu(CurrentTurret);
@@ -166,7 +167,7 @@ namespace RockAndHardPlace
             if (turret.Weapon == null || CastleUpgrades.StateFor(upgrade, turret) != UpgradeState.Available ||
                 !turret.Bank.TryUnlock(id, upgrade.Cost(turret.Weapon))) return false;
             if (upgrade.HealthBonus > 0) turret.Health.IncreaseMaxHealth(upgrade.HealthBonus);
-            LastEvent = turret.DisplayName + " unlocked " + upgrade.Name + " (" + upgrade.Effect(turret.Weapon) + ").";
+            SetLastEvent(turret.DisplayName + " unlocked " + upgrade.Name + " (" + upgrade.Effect(turret.Weapon) + ").", turret);
             GameAudio.Play(SoundCue.Upgrade);
             return true;
         }
@@ -186,7 +187,7 @@ namespace RockAndHardPlace
         {
             if (Phase != GamePhase.MountainLeaving) return;
             SetPhase(GamePhase.Combat);
-            LastEvent = "Mountain cleared. Direct hits now damage kingdoms.";
+            SetLastEvent("Mountain cleared. Direct hits now damage kingdoms.");
             NextTurn();
         }
 
@@ -195,7 +196,7 @@ namespace RockAndHardPlace
             shell.Resolved -= OnShotResolved;
             activeShell = null;
             var shooter = shell.Shooter;
-            LastEvent = shooter.DisplayName + " missed.";
+            SetLastEvent(shooter.DisplayName + " missed.", shooter);
 
             if (Phase == GamePhase.Mining && mountain.Owns(hit))
             {
@@ -210,15 +211,15 @@ namespace RockAndHardPlace
                 if (mined > 0 && lootManager != null)
                     lootMessage = lootManager.AwardLoot(shooter);
 
-                LastEvent = shooter.DisplayName + " mined " + mined + " ore.";
-
+                string message = shooter.DisplayName + " mined " + mined + " ore.";
                 if (!string.IsNullOrEmpty(lootMessage))
-                    LastEvent += " " + lootMessage;
+                    message += " " + lootMessage;
+                SetLastEvent(message, shooter);
 
                 if (mountain.IsDepleted)
                 {
                     SetPhase(GamePhase.MountainLeaving);
-                    LastEvent = "The mountain is getting up... " + lootMessage;
+                    SetLastEvent("The mountain is getting up... " + lootMessage);
                     return;
                 }
             }
@@ -230,7 +231,7 @@ namespace RockAndHardPlace
                     int damage = HitDamage(shooter);
                     target.Health.TakeDamage(damage);
                     GameAudio.Play(SoundCue.KingdomHit);
-                    LastEvent = shooter.DisplayName + " hit " + target.DisplayName + " for " + damage + ".";
+                    SetLastEvent(shooter.DisplayName + " hit " + target.DisplayName + " for " + damage + ".", shooter);
                     if (target.Health.IsDead)
                     {
                         EndGame(shooter);
@@ -254,7 +255,7 @@ namespace RockAndHardPlace
         {
             Winner = winner;
             SetPhase(GamePhase.GameOver);
-            LastEvent = winner.DisplayName + " wins! Press Restart to play again.";
+            SetLastEvent(winner.DisplayName + " wins! Press Restart to play again.", winner);
             onGameOver.Invoke(winner);
             GameAudio.Play(SoundCue.Victory);
         }
@@ -263,6 +264,12 @@ namespace RockAndHardPlace
         {
             Phase = phase;
             onPhaseChanged.Invoke(phase);
+        }
+
+        private void SetLastEvent(string message, Turret source = null)
+        {
+            LastEvent = message;
+            LastEventSource = source;
         }
     }
 }

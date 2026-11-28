@@ -78,6 +78,13 @@ namespace RockAndHardPlace
             var background = Fill(rect, Color.white, true);
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = background;
+            SetButtonColors(button, primary);
+            button.onClick.AddListener(() => action());
+            return button;
+        }
+
+        public static void SetButtonColors(Button button, bool primary)
+        {
             var colors = button.colors;
             colors.normalColor = primary ? Gold : new Color32(52, 70, 79, 255);
             colors.highlightedColor = primary ? new Color32(255, 225, 168, 255) : new Color32(77, 101, 112, 255);
@@ -86,8 +93,6 @@ namespace RockAndHardPlace
             colors.disabledColor = new Color32(43, 54, 60, 255);
             colors.fadeDuration = 0.08f;
             button.colors = colors;
-            button.onClick.AddListener(() => action());
-            return button;
         }
 
         public static Button LabeledButton(RectTransform rect, TMP_FontAsset font, string label, Action action,
