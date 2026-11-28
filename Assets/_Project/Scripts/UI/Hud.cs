@@ -144,7 +144,9 @@ namespace RockAndHardPlace
             }
             else
             {
-                builder.Append("<size=26><b>The mountain is leaving!</b></size>");
+                builder.Append(gameManager.Phase == GamePhase.MountainReturning
+                    ? "<size=26><b>The mountain is returning!</b></size>"
+                    : "<size=26><b>The mountain is leaving!</b></size>");
             }
             statusText.SetText(builder);
             UpdateEventBanner();

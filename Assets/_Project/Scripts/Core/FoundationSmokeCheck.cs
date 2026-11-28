@@ -101,7 +101,9 @@ namespace RockAndHardPlace
             yield return null;
             var mountain = game.Mountain;
             var escape = mountain.GetComponent<MountainEscape>();
-            Check(escape != null && mountain.GetComponentInChildren<TilemapCollider2D>() != null,
+            var mountainCollider = mountain.GetComponentInChildren<TilemapCollider2D>();
+            Vector3 mountainScale = mountain.transform.localScale;
+            Check(escape != null && mountainCollider != null,
                 "The tilemap mountain has its escape controller and collision.");
             CheckPoseContinuity();
             escape.Footstep += CountStep;
@@ -196,6 +198,12 @@ namespace RockAndHardPlace
 
             for (int shot = 0; game.Phase != GamePhase.GameOver && shot < 20; shot++)
             {
+                if (shot == 4)
+                {
+                    yield return CheckMountainReturn(origin, mountainScale, mountainCollider);
+                    continue;
+                }
+
                 var target = game.Turrets[(game.CurrentIndex + 1) % game.Turrets.Count];
                 var shooter = game.CurrentTurret;
                 int health = target.Health.Current;
@@ -205,6 +213,9 @@ namespace RockAndHardPlace
                 yield return WaitForShot();
                 Check(target.Health.Current == Mathf.Max(0, health - damage),
                     "Local opponents deal full damage on a real kingdom impact. " + game.LastEvent);
+                if (shot < 4)
+                    Check(game.Phase == GamePhase.Combat && !mountain.gameObject.activeSelf,
+                        "The mountain stays away for the first four duel shots.");
                 if (shot < 2)
                 {
                     CheckHitBanner(shooter, target, damage);
@@ -230,7 +241,48 @@ namespace RockAndHardPlace
             game = FindAnyObjectByType<GameManager>();
             Check(game != null && game.Phase == GamePhase.Title, "Main Menu returns to the title screen.");
             yield return CheckSinglePlayer();
-            Finish(0, "FOUNDATION CHECK PASSED: 2 Player match through rematch and Single Player controls, CPU mining, upgrades, combat, pause, and restart.");
+            Finish(0, "FOUNDATION CHECK PASSED: Mountain returns as cover after five duel shots in both match modes. Mining, combat, pause and restart passed.");
+        }
+
+        private IEnumerator CheckMountainReturn(Vector3 origin, Vector3 originalScale, TilemapCollider2D mountainCollider)
+        {
+            var mountain = game.Mountain;
+            int shooterIndex = game.CurrentIndex;
+            int stepsBeforeReturn = steps;
+            Check(FindShot(c => c.GetComponentInParent<Turret>() == null) && game.TryFire(), "The fifth duel shot misses the castle.");
+            Check(game.Phase == GamePhase.Combat && mountain.HasLeft && !mountain.gameObject.activeSelf,
+                "The return waits for the fifth shell to resolve.");
+            yield return WaitForShot();
+            Check(game.Phase == GamePhase.MountainReturning && mountain.gameObject.activeSelf &&
+                game.LastEvent.EndsWith(" missed.", StringComparison.Ordinal), "A resolved miss counts as the fifth shot.");
+            Check(game.CurrentIndex == shooterIndex && !mountainCollider.enabled && !game.TryFire() && !game.TryBuyUpgrade(),
+                "Turns, firing, upgrades, and the mountain collider wait for the return to finish.");
+            float startingScale = mountain.transform.localScale.x;
+            float start = Time.time;
+            yield return Tap(Key.Escape);
+            Check(game.IsPaused, "The return can be paused.");
+            Vector3 pausedPosition = mountain.transform.localPosition;
+            yield return new WaitForSecondsRealtime(0.18f);
+            Check(mountain.transform.localPosition == pausedPosition, "The paused mountain holds its pose.");
+            Click("Resume");
+            yield return new WaitUntil(() => Time.time >= start + MountainEscape.ReturnRunDuration * 0.76f);
+            Check(mountain.transform.localPosition.z > origin.z && mountain.transform.localScale.x > startingScale &&
+                mountain.transform.localScale.x < originalScale.x, "The mountain runs in from the distance and grows toward the foreground.");
+            yield return Capture("05-mountain-returning");
+            while (game.Phase == GamePhase.MountainReturning) yield return null;
+            Check(game.Phase == GamePhase.Combat && game.CurrentIndex == (shooterIndex + 1) % game.Turrets.Count,
+                "The return passes the turn exactly once.");
+            Check(!mountain.HasLeft && mountainCollider.enabled && mountain.transform.localPosition == origin &&
+                mountain.transform.localScale == originalScale && steps > stepsBeforeReturn + 4,
+                "The running mountain reaches its original scale and position with its collider restored.");
+            yield return Capture("05-mountain-cover");
+
+            var shooter = game.CurrentTurret;
+            int ore = shooter.Bank.Ore;
+            Check(FindShot(mountain.Owns) && game.TryFire(), "A low shell can hit the returned mountain.");
+            yield return WaitForShot();
+            Check(game.Phase == GamePhase.Combat && shooter.Bank.Ore == ore && mountain.IsDepleted &&
+                game.LastEvent == shooter.DisplayName + " hit the mountain.", "The returned mountain intercepts a real shot as cover.");
         }
 
         private IEnumerator CheckSinglePlayer()
@@ -271,12 +323,9 @@ namespace RockAndHardPlace
                 "The CPU spends its ore before the mountain leaves.");
             while (game.Phase == GamePhase.MountainLeaving) yield return null;
             Check(game.Phase == GamePhase.Combat, "Single Player continues into combat.");
-            if (game.CanHumanAct)
-            {
-                Check(FindShot(c => c.GetComponentInParent<Turret>() == cpu) && game.TryFire(),
-                    "Blue can hit the CPU castle.");
-                yield return WaitForShot();
-            }
+            Check(game.CanHumanAct && FindShot(c => c.GetComponentInParent<Turret>() == cpu) && game.TryFire(),
+                "Blue can open the duel with a hit.");
+            yield return WaitForShot();
             var blue = game.Turrets[0];
             int health = blue.Health.Current;
             yield return WaitForCpuShot();
@@ -290,6 +339,19 @@ namespace RockAndHardPlace
             Check(UpgradeReminderVisible(), "Blue gets the reminder again when its solo turn starts.");
             yield return new WaitForSecondsRealtime(0.12f);
             yield return Capture("08-solo-hit-and-reminder");
+            for (int round = 0; round < 2; round++)
+            {
+                Check(FindShot(c => c.GetComponentInParent<Turret>() == null) && game.TryFire(),
+                    "Blue can fire the third and fifth solo duel shots.");
+                yield return WaitForShot();
+                if (round == 0) yield return WaitForCpuShot();
+            }
+            Check(game.Phase == GamePhase.MountainReturning && !game.CanAct, "CPU shots count toward the mountain's return.");
+            while (game.Phase == GamePhase.MountainReturning) yield return null;
+            Check(game.IsCpuTurn, "The CPU receives the next turn after the mountain returns.");
+            health = blue.Health.Current;
+            yield return WaitForCpuShot();
+            Check(blue.Health.Current < health, "The CPU can lob a shot over the returned mountain.");
             yield return Tap(Key.R);
             game = FindAnyObjectByType<GameManager>();
             Check(game != null && game.Mode == MatchMode.SinglePlayer && game.Phase == GamePhase.Mining && game.CanHumanAct,
@@ -456,6 +518,13 @@ namespace RockAndHardPlace
             var end = MountainEscape.Sample(MountainEscape.Duration, destination);
             Check(Vector3.Distance(end.RootOffset, destination) < 0.01f && end.FigureScale < 0.04f,
                 "The mountain reaches the river bend at a distant scale.");
+            var entry = MountainEscape.SampleReturn(0, destination);
+            Check(Vector3.Distance(entry.RootOffset, end.RootOffset) < 0.01f && Mathf.Abs(entry.FigureScale - end.FigureScale) < 0.001f,
+                "The mountain reappears where it left the valley.");
+            var running = MountainEscape.SampleReturn(MountainEscape.ReturnRunDuration - 0.0001f, destination);
+            var settling = MountainEscape.SampleReturn(MountainEscape.ReturnRunDuration + 0.0001f, destination);
+            Check(Vector3.Distance(running.RootOffset, settling.RootOffset) < 0.01f &&
+                Vector3.Distance(running.BodyOffset, settling.BodyOffset) < 0.01f, "The return joins the landing without a snap.");
         }
 
         private static void Check(bool condition, string message)

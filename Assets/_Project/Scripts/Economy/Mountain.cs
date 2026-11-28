@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -28,7 +30,12 @@ namespace RockAndHardPlace
         public int OrePerHit => orePerHit;
         public int OreRemaining { get; private set; }
         public bool IsDepleted => OreRemaining <= 0;
-        public bool HasLeft { get; private set; }
+        public bool HasLeft => travel == Travel.Away || travel == Travel.Returning;
+
+        private enum Travel { Resting, Leaving, Away, Returning }
+        private readonly List<Collider2D> disabledColliders = new List<Collider2D>();
+        private Travel travel;
+        private Action onReturned;
 
         private void Awake()
         {
@@ -53,8 +60,13 @@ namespace RockAndHardPlace
 
         private void StartLeaving()
         {
+            travel = Travel.Leaving;
             foreach (var part in GetComponentsInChildren<Collider2D>())
+            {
+                if (!part.enabled) continue;
                 part.enabled = false;
+                disabledColliders.Add(part);
+            }
             onDepleted.Invoke();
             escape.Begin();
         }
@@ -62,10 +74,34 @@ namespace RockAndHardPlace
         // The escape controller calls this after the mountain disappears into the valley.
         public void OnLeaveFinished()
         {
-            if (HasLeft || !IsDepleted) return;
-            HasLeft = true;
-            onLeft.Invoke();
+            if (travel != Travel.Leaving) return;
+            travel = Travel.Away;
             gameObject.SetActive(false);
+            onLeft.Invoke();
+        }
+
+        internal bool TryReturn(Action completed)
+        {
+            if (travel != Travel.Away) return false;
+            travel = Travel.Returning;
+            onReturned = completed;
+            gameObject.SetActive(true);
+            escape.BeginReturn();
+            return true;
+        }
+
+        internal void OnReturnFinished()
+        {
+            if (travel != Travel.Returning) return;
+            travel = Travel.Resting;
+            foreach (var part in disabledColliders)
+                if (part != null) part.enabled = true;
+            disabledColliders.Clear();
+            Physics2D.SyncTransforms();
+
+            var completed = onReturned;
+            onReturned = null;
+            completed?.Invoke();
         }
     }
 }

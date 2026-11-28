@@ -1,6 +1,6 @@
 # Between a Rock and a Hard Place
 
-Two kingdoms share a battlefield with a resource mountain in the way. Players take turns aiming artillery, mining ore and buying an upgrade. When its ore runs out, the mountain wakes up, gets to its feet and runs away. The kingdoms then fire across the opening until one wins.
+Two kingdoms share a battlefield with a resource mountain in the way. Players take turns aiming artillery, mining ore and buying an upgrade. When its ore runs out, the mountain wakes up, gets to its feet and runs away. After five duel shots, including misses, it sprints back as cover. Lob shots over it to hit the other castle.
 
 ## Open and play
 
@@ -21,7 +21,7 @@ Choose **Single Player** to play Blue against the Red CPU. In solo play you can 
 
 The Red CPU deals 60% of its cannon damage in Single Player. The HUD shows the adjusted damage.
 
-A gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact while you aim. The setting carries across matches.
+A gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is running. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact while you aim. The setting carries across matches.
 
 Each castle spends its own ore. The **Upgrade ready [U]** button turns gold when you can buy a node on your turn. Every node currently costs 20 ore and can be bought once. Buying a node leaves the shot available that turn.
 

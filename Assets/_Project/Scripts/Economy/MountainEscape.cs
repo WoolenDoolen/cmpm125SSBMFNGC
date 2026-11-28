@@ -14,6 +14,8 @@ namespace RockAndHardPlace
         public const float RunStart = RiseEnd + 0.18f;
         public const float RunDuration = 1.1f;
         public const float Duration = RunStart + RunDuration;
+        public const float ReturnRunDuration = 1.25f;
+        public const float ReturnDuration = ReturnRunDuration + 0.42f;
 
         [SerializeField] private Transform body;
         [SerializeField] private Transform frontLeg;
@@ -36,6 +38,7 @@ namespace RockAndHardPlace
         private Vector3 backOrigin;
         private float elapsed;
         private int lastStep;
+        private bool returning;
 
         private void Awake()
         {
@@ -58,22 +61,30 @@ namespace RockAndHardPlace
             }
             if (frontLeg != null) frontOrigin = frontLeg.localPosition;
             if (backLeg != null) backOrigin = backLeg.localPosition;
+            StartMoving(false);
+            GameAudio.Play(SoundCue.MountainWake);
+        }
+
+        internal void BeginReturn() => StartMoving(true);
+
+        private void StartMoving(bool isReturn)
+        {
+            returning = isReturn;
             elapsed = 0;
             lastStep = -1;
-            if (restingFace != null) restingFace.SetActive(false);
-            if (awakeFace != null) awakeFace.SetActive(true);
+            SetAwakeFace(true);
             IsRunning = true;
-            GameAudio.Play(SoundCue.MountainWake);
-            Apply(Sample(0, valleyOffset));
+            Apply(returning ? SampleReturn(0, valleyOffset) : Sample(0, valleyOffset));
         }
 
         private void Update()
         {
-            if (!IsRunning) return;
-            elapsed = Mathf.Min(elapsed + Time.deltaTime, Duration);
-            var pose = Sample(elapsed, valleyOffset);
+            if (!IsRunning || Time.deltaTime <= 0) return;
+            float duration = returning ? ReturnDuration : Duration;
+            elapsed = Mathf.Min(elapsed + Time.deltaTime, duration);
+            var pose = returning ? SampleReturn(elapsed, valleyOffset) : Sample(elapsed, valleyOffset);
             Apply(pose);
-            if (elapsed >= RunStart)
+            if (returning ? elapsed < ReturnRunDuration : elapsed >= RunStart)
             {
                 int step = Mathf.FloorToInt((pose.Stride + Mathf.PI * 0.5f) / Mathf.PI);
                 if (step != lastStep)
@@ -84,9 +95,20 @@ namespace RockAndHardPlace
                     GameAudio.Play(SoundCue.Footstep, Mathf.Lerp(0.1f, 0.8f, pose.FigureScale));
                 }
             }
-            if (elapsed < Duration) return;
+            if (elapsed < duration) return;
             IsRunning = false;
-            mountain.OnLeaveFinished();
+            if (returning)
+            {
+                SetAwakeFace(false);
+                mountain.OnReturnFinished();
+            }
+            else mountain.OnLeaveFinished();
+        }
+
+        private void SetAwakeFace(bool awake)
+        {
+            if (restingFace != null) restingFace.SetActive(!awake);
+            if (awakeFace != null) awakeFace.SetActive(awake);
         }
 
         private void Apply(EscapePose pose)
@@ -146,20 +168,50 @@ namespace RockAndHardPlace
             }
 
             float run = Mathf.Clamp01((t - RunStart) / RunDuration);
-            float depth = Mathf.Pow(run, 1.15f);
+            FollowRiver(ref pose, valleyOffset, Mathf.Pow(run, 1.15f));
+            float blend = Mathf.SmoothStep(0, 1, run / 0.09f);
+            ApplyStride(ref pose, run, blend);
+            pose.Lean = -5 - blend * (4 + 2 * Mathf.Sin(pose.Stride));
+            return pose;
+        }
+
+        public static EscapePose SampleReturn(float seconds, Vector3 valleyOffset)
+        {
+            float t = Mathf.Clamp(seconds, 0, ReturnDuration);
+            var pose = new EscapePose { BodyScale = Vector3.one, FigureScale = 1, BodyOffset = Vector3.up, Extension = 1 };
+            if (t < ReturnRunDuration)
+            {
+                // Come back along the river with fresh strides and a lean toward the foreground.
+                float run = t / ReturnRunDuration;
+                FollowRiver(ref pose, valleyOffset, Mathf.Pow(1 - run, 1.15f));
+                float blend = Mathf.SmoothStep(0, 1, Mathf.Min(run / 0.09f, (1 - run) / 0.14f));
+                ApplyStride(ref pose, run, blend);
+                pose.Lean = blend * (6 + 2 * Mathf.Sin(pose.Stride));
+                return pose;
+            }
+
+            float settle = Mathf.SmoothStep(0, 1, (t - ReturnRunDuration) / (ReturnDuration - ReturnRunDuration));
+            pose.BodyOffset.y = pose.Extension = 1 - settle;
+            float squash = Mathf.Sin(settle * Mathf.PI);
+            pose.BodyScale = new Vector3(1 + 0.09f * squash, 1 - 0.12f * squash, 1);
+            return pose;
+        }
+
+        private static void FollowRiver(ref EscapePose pose, Vector3 valleyOffset, float depth)
+        {
             // The camera is orthographic. Scale provides perspective as he follows the
             // river, and depth lets the distant ridges actually hide him at the end.
             pose.RootOffset = valleyOffset * depth;
             pose.RootOffset.x += 0.8f * Mathf.Sin(depth * Mathf.PI);
             pose.FigureScale = Mathf.Pow(0.025f, depth);
+        }
+
+        private static void ApplyStride(ref EscapePose pose, float run, float blend)
+        {
             pose.Stride = 4.6f * Mathf.PI * 2 * run;
-            float blend = Mathf.SmoothStep(0, 1, run / 0.09f);
-            float bounce = Mathf.Abs(Mathf.Sin(pose.Stride));
-            pose.BodyOffset.y += 0.22f * bounce * blend;
-            pose.Lean = -5 - blend * (4 + 2 * Mathf.Sin(pose.Stride));
+            pose.BodyOffset.y += 0.22f * Mathf.Abs(Mathf.Sin(pose.Stride)) * blend;
             pose.FrontFoot = Foot(pose.Stride) * blend;
             pose.BackFoot = Foot(pose.Stride + Mathf.PI) * blend;
-            return pose;
         }
 
         private static Vector3 Foot(float phase) =>

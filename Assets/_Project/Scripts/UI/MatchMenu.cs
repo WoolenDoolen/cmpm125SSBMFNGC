@@ -87,7 +87,7 @@ namespace RockAndHardPlace
 
             // Upgrades can only open between shots. They block keyboard play while
             // leaving the purchase actions available on that page.
-            bool matchRunning = game.HasTurn || game.Phase == GamePhase.MountainLeaving;
+            bool matchRunning = game.HasTurn || game.IsMountainMoving;
             game.SetPaused(matchRunning && open && next != Page.Upgrades);
             game.IgnoreKeyboardThisFrame();
 
@@ -193,7 +193,7 @@ namespace RockAndHardPlace
                 "<b>Single Player.</b> You play Blue with WASD or arrows. The CPU plays Red.",
                 "<b>2 Player.</b> Share a keyboard and use your side's keys.",
                 "<b>Mine and upgrade.</b> Hit the mountain for ore and loot. Spend ore before firing.",
-                "<b>Duel.</b> Once the mountain leaves, bring the other castle to zero HP."
+                "<b>Duel.</b> Drop the other castle to zero HP. Lob over the mountain when it returns."
             };
             for (int i = 0; i < rules.Length; i++)
                 Text(panel, "Match rule " + (i + 1), rules[i], 42, 163 + i * 61, 484, 57, 22, MatchUi.TextColor, TextAlignmentOptions.TopLeft);

@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace RockAndHardPlace
 {
-    public enum GamePhase { Mining, MountainLeaving, Combat, GameOver, Title }
+    public enum GamePhase { Mining, MountainLeaving, Combat, GameOver, Title, MountainReturning }
     public enum MatchMode { TwoPlayer, SinglePlayer }
 
     public sealed class GameManager : MonoBehaviour
@@ -50,15 +50,18 @@ namespace RockAndHardPlace
         public string LastEvent { get; private set; } = "Shoot the mountain to collect ore.";
         internal Turret LastEventSource { get; private set; }
         public bool HasTurn => Phase == GamePhase.Mining || Phase == GamePhase.Combat;
+        internal bool IsMountainMoving => Phase == GamePhase.MountainLeaving || Phase == GamePhase.MountainReturning;
         public bool CanAct => isActiveAndEnabled && HasTurn && !IsPaused && !ShotActive;
         public bool IsCpuTurn => HasTurn && IsCpu(CurrentTurret);
         public bool CanHumanAct => CanAct && !IsCpuTurn;
         public event Action<Vector2> OreImpact;
 
+        private const int CombatShotsBeforeReturn = 5;
         private const string EasyModePreference = "RockAndHardPlace.EasyMode";
         private static MatchMode? modeOnReload;
         private Projectile activeShell;
         private CastleOpponent opponent;
+        private int combatShots;
         private int ignoreInputFrame = -1;
         public bool AcceptsKeyboard => Time.frameCount != ignoreInputFrame;
 
@@ -191,6 +194,13 @@ namespace RockAndHardPlace
             NextTurn();
         }
 
+        private void OnMountainReturned()
+        {
+            SetPhase(GamePhase.Combat);
+            SetLastEvent("The mountain is back. Aim over it to hit the other castle.");
+            NextTurn();
+        }
+
         private void OnShotResolved(Projectile shell, Collider2D hit)
         {
             shell.Resolved -= OnShotResolved;
@@ -238,9 +248,22 @@ namespace RockAndHardPlace
                         return;
                     }
                 }
+                else if (mountain.Owns(hit))
+                {
+                    SetLastEvent(shooter.DisplayName + " hit the mountain.", shooter);
+                    GameAudio.Play(SoundCue.StoneHit);
+                }
                 else GameAudio.Play(SoundCue.StoneHit, 0.45f);
             }
             else if (hit != null) GameAudio.Play(SoundCue.StoneHit, 0.45f);
+
+            // Count resolved duel shots from both castles, including misses.
+            if (Phase == GamePhase.Combat && ++combatShots == CombatShotsBeforeReturn &&
+                mountain.TryReturn(OnMountainReturned))
+            {
+                SetPhase(GamePhase.MountainReturning);
+                return;
+            }
             NextTurn();
         }
 
