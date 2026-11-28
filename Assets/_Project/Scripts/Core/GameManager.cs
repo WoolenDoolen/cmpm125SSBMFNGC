@@ -24,6 +24,10 @@ namespace RockAndHardPlace
         [Tooltip("Power per second while holding the power input.")]
         [SerializeField, Min(0)] private float powerSpeed = 5;
 
+        [Header("Single Player")]
+        [Tooltip("Multiplier applied to Red CPU damage after upgrades and loot.")]
+        [SerializeField, Range(0.1f, 1f)] private float cpuDamageMultiplier = 0.6f;
+
         [Header("Events")]
         [SerializeField] private UnityEvent<GamePhase> onPhaseChanged = new UnityEvent<GamePhase>();
         [Tooltip("Passes the turret whose turn just started.")]
@@ -97,6 +101,12 @@ namespace RockAndHardPlace
         }
 
         internal bool IsCpu(Turret turret) => Mode == MatchMode.SinglePlayer && turret == turrets[1];
+
+        internal int HitDamage(Turret turret)
+        {
+            int damage = turret.Damage;
+            return IsCpu(turret) && damage > 0 ? Mathf.Max(1, Mathf.RoundToInt(damage * cpuDamageMultiplier)) : damage;
+        }
 
         public void SetEasyMode(bool enabled)
         {
@@ -217,7 +227,7 @@ namespace RockAndHardPlace
                 var target = hit.GetComponentInParent<Turret>();
                 if (target != null && target != shooter)
                 {
-                    int damage = shooter.Damage;
+                    int damage = HitDamage(shooter);
                     target.Health.TakeDamage(damage);
                     GameAudio.Play(SoundCue.KingdomHit);
                     LastEvent = shooter.DisplayName + " hit " + target.DisplayName + " for " + damage + ".";

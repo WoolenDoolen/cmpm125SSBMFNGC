@@ -101,7 +101,7 @@ namespace RockAndHardPlace
                 builder.Append("<b>").Append(turret.DisplayName).Append("</b>")
                        .Append("   HP ").Append(turret.Health.Current).Append('/').Append(turret.Health.Max)
                        .Append("   Ore ").Append(turret.Bank.Ore)
-                       .Append("   Damage ").Append(turret.Damage).Append('\n');
+                       .Append("   Damage ").Append(gameManager.HitDamage(turret)).Append('\n');
             }
 
             if (!over)
@@ -142,7 +142,8 @@ namespace RockAndHardPlace
             eventText.SetText(gameManager.LastEvent);
             upgradesButton.interactable = gameManager.CanHumanAct;
             foreach (var castle in castles)
-                castle.Refresh(hasTurn && castle.Turret == active, gameManager.IsCpu(castle.Turret));
+                castle.Refresh(hasTurn && castle.Turret == active, gameManager.IsCpu(castle.Turret),
+                    gameManager.HitDamage(castle.Turret));
         }
 
         private sealed class CastleStatus
@@ -178,7 +179,7 @@ namespace RockAndHardPlace
                     TextAlignmentOptions.MidlineRight, true);
             }
 
-            public void Refresh(bool active, bool cpu)
+            public void Refresh(bool active, bool cpu, int damage)
             {
                 int current = Turret.Health.Current;
                 int max = Turret.Health.Max;
@@ -192,7 +193,7 @@ namespace RockAndHardPlace
                 fill.color = Color.Lerp(team, Color.white, hitFlash / 0.36f);
                 hp.color = Color.Lerp(MatchUi.TextColor, MatchUi.Red, hitFlash / 0.36f);
                 hp.text = current + "/" + max + " HP";
-                stats.text = "Ore " + Turret.Bank.Ore + "    ·    Damage " + Turret.Damage;
+                stats.text = "Ore " + Turret.Bank.Ore + "  ·  Damage " + damage;
                 keys.text = cpu ? "CPU" : aimKeys;
                 rule.color = active ? team : new Color(team.r, team.g, team.b, 0.23f);
             }

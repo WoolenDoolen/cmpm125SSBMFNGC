@@ -40805,6 +40805,7 @@ MonoBehaviour:
   startFromMenu: 1
   angleSpeed: 30
   powerSpeed: 5
+  cpuDamageMultiplier: 0.6
   onPhaseChanged:
     m_PersistentCalls:
       m_Calls: []

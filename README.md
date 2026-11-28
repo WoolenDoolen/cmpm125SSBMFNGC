@@ -19,6 +19,8 @@ Use **Unity 6000.6.3f1** with the packages pinned in `Packages/manifest.json` (U
 
 Choose **Single Player** to play Blue against the Red CPU. In solo play you can aim with WASD or the arrows. Choose **2 Player** to share a keyboard, with WASD for Blue and arrows for Red. Human players use Space to fire and U for upgrades on their turn. Rematches keep the selected mode.
 
+The Red CPU deals 60% of its cannon damage in Single Player. The HUD shows the adjusted damage.
+
 A gold outline marks the acting castle. Shooting and purchases pause while a shell is active or the mountain is leaving. Both sides keep their ore, loot and upgrades when mining becomes combat. **EZ Mode** in Options shows the predicted arc and first point of impact while you aim. The setting carries across matches.
 
 Each castle spends its own ore. Every node currently costs 20 ore and can be bought once. Buying a node leaves the shot available that turn.

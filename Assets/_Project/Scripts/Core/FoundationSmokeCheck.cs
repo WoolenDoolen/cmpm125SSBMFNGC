@@ -187,10 +187,12 @@ namespace RockAndHardPlace
             {
                 var target = game.Turrets[(game.CurrentIndex + 1) % game.Turrets.Count];
                 int health = target.Health.Current;
+                int damage = game.CurrentTurret.Damage;
                 Check(FindShot(c => c.GetComponentInParent<Turret>() == target), "A ballistic shot reaches the opposing kingdom.");
                 Check(game.TryFire(), "Combat accepts the next shot.");
                 yield return WaitForShot();
-                Check(target.Health.Current < health, "A real kingdom impact reduces health. " + game.LastEvent);
+                Check(target.Health.Current == Mathf.Max(0, health - damage),
+                    "Local opponents deal full damage on a real kingdom impact. " + game.LastEvent);
                 if (shot == 0) yield return Capture("05-damage");
             }
             Check(game.Phase == GamePhase.GameOver && game.Winner != null && !game.TryFire(),
@@ -257,9 +259,13 @@ namespace RockAndHardPlace
                     "Blue can hit the CPU castle.");
                 yield return WaitForShot();
             }
-            int health = game.Turrets[0].Health.Current;
+            var blue = game.Turrets[0];
+            int health = blue.Health.Current;
             yield return WaitForCpuShot();
-            Check(game.Turrets[0].Health.Current < health, "The CPU can damage Blue in combat.");
+            int damage = health - blue.Health.Current;
+            Check(damage > 0 && damage < cpu.Damage && damage == game.HitDamage(cpu),
+                "The CPU hits Blue for the reduced damage shown in the HUD.");
+            Check(3 * damage < health, "Blue can survive three hits at the CPU's opening damage.");
             yield return Tap(Key.R);
             game = FindAnyObjectByType<GameManager>();
             Check(game != null && game.Mode == MatchMode.SinglePlayer && game.Phase == GamePhase.Mining && game.CanHumanAct,
